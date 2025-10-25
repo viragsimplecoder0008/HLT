@@ -501,10 +501,6 @@
     top: calc(var(--spacing) * 0);
   }
 
-  .top-1\/2 {
-    top: 50%;
-  }
-
   .top-6 {
     top: calc(var(--spacing) * 6);
   }
@@ -535,10 +531,6 @@
 
   .left-0 {
     left: calc(var(--spacing) * 0);
-  }
-
-  .left-1\/2 {
-    left: 50%;
   }
 
   .left-10 {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -18,6 +18,7 @@ interface AuthScreenProps {
 export function AuthScreen({ onAuthSuccess, theme, toggleTheme }: AuthScreenProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   
   // Sign up state
   const [signupUsername, setSignupUsername] = useState('');
@@ -26,6 +27,16 @@ export function AuthScreen({ onAuthSuccess, theme, toggleTheme }: AuthScreenProp
   // Sign in state
   const [signinUsername, setSigninUsername] = useState('');
   const [signinPassword, setSigninPassword] = useState('');
+
+  useEffect(() => {
+    // Track mouse position for cursor-following gradient
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,7 +173,14 @@ export function AuthScreen({ onAuthSuccess, theme, toggleTheme }: AuthScreenProp
       {/* Animated decorative glass orbs creating depth */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-blue-400/25 to-cyan-500/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
       <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-br from-green-400/25 to-emerald-500/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-br from-yellow-400/15 to-amber-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }} />
+      {/* Cursor-following gradient orb */}
+      <div 
+        className="absolute w-[500px] h-[500px] bg-gradient-to-br from-yellow-400/15 to-amber-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-all duration-300 ease-out" 
+        style={{ 
+          left: `${mousePosition.x}px`, 
+          top: `${mousePosition.y}px`
+        }} 
+      />
       
       {/* Theme Toggle */}
       <button

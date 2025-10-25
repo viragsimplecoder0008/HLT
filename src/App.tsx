@@ -17,6 +17,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [refreshKey, setRefreshKey] = useState(0);
   const { theme, toggleTheme } = useTheme();
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     // Try to restore session from localStorage
@@ -27,6 +28,16 @@ export default function App() {
       setAccessToken(storedToken);
       setUser(JSON.parse(storedUser));
     }
+  }, []);
+
+  useEffect(() => {
+    // Track mouse position for cursor-following gradient
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   const handleAuthSuccess = (token: string, userData: any) => {
@@ -57,7 +68,14 @@ export default function App() {
       {/* Animated background glass orbs for depth */}
       <div className="fixed top-0 left-0 w-[500px] h-[500px] bg-gradient-to-br from-blue-400/20 to-blue-600/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 animate-pulse" style={{ animationDuration: '4s' }} />
       <div className="fixed bottom-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-green-400/20 to-emerald-600/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 animate-pulse" style={{ animationDuration: '6s', animationDelay: '1s' }} />
-      <div className="fixed top-1/2 left-1/2 w-[450px] h-[450px] bg-gradient-to-br from-yellow-400/15 to-amber-600/8 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 animate-pulse" style={{ animationDuration: '5s', animationDelay: '2s' }} />
+      {/* Cursor-following gradient orb */}
+      <div 
+        className="fixed w-[450px] h-[450px] bg-gradient-to-br from-yellow-400/15 to-amber-600/8 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-all duration-300 ease-out" 
+        style={{ 
+          left: `${mousePosition.x}px`, 
+          top: `${mousePosition.y}px`
+        }} 
+      />
       
       <Toaster />
       
