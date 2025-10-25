@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Moon, Sun } from 'lucide-react';
 import type { Theme } from '../hooks/useTheme';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
-import logoImage from 'figma:asset/42646e4fa1da5dfeb0377d7085b95bf79b2ecdfe.png';
+import logoImage from 'figma:asset/6d8f4ca8453fef395dae5295369d777acb49f1cc.png';
 
 interface AuthScreenProps {
   onAuthSuccess: (accessToken: string, user: any) => void;

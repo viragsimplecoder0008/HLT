@@ -7,7 +7,7 @@ import { Toaster } from './components/ui/sonner';
 import { Home, Trophy, User, Moon, Sun } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTheme } from './hooks/useTheme';
-import logoImage from 'figma:asset/42646e4fa1da5dfeb0377d7085b95bf79b2ecdfe.png';
+import logoImage from 'figma:asset/6d8f4ca8453fef395dae5295369d777acb49f1cc.png';
 
 type Tab = 'home' | 'leaderboard' | 'profile';
 
