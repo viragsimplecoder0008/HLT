@@ -65,6 +65,42 @@ function getDateRanges() {
   return { today, weekStartStr, monthStartStr, yearStartStr };
 }
 
+// Helper function to reset period points if needed
+function resetPeriodPoints(userData: any) {
+  const { today, weekStartStr, monthStartStr, yearStartStr } = getDateRanges();
+  let updated = false;
+  
+  // Reset daily points if new day
+  if (userData.lastResetDay !== today) {
+    userData.dayPoints = 0;
+    userData.lastResetDay = today;
+    updated = true;
+  }
+  
+  // Reset weekly points if new week
+  if (userData.lastResetWeek !== weekStartStr) {
+    userData.weekPoints = 0;
+    userData.lastResetWeek = weekStartStr;
+    updated = true;
+  }
+  
+  // Reset monthly points if new month
+  if (userData.lastResetMonth !== monthStartStr) {
+    userData.monthPoints = 0;
+    userData.lastResetMonth = monthStartStr;
+    updated = true;
+  }
+  
+  // Reset yearly points if new year
+  if (userData.lastResetYear !== yearStartStr) {
+    userData.yearPoints = 0;
+    userData.lastResetYear = yearStartStr;
+    updated = true;
+  }
+  
+  return { userData, updated };
+}
+
 // Health check endpoint
 app.get("/make-server-8daf44f4/health", (c) => {
   return c.json({ status: "ok", timestamp: new Date().toISOString() });
@@ -109,12 +145,22 @@ app.post("/make-server-8daf44f4/signup", async (c) => {
       return c.json({ error: error.message }, 400);
     }
     
-    // Store user data
+    // Store user data with period-specific points
+    const now = new Date();
+    const today = formatDate(now);
     await kv.set(`user:${data.user.id}`, {
       id: data.user.id,
       username,
       createdAt: new Date().toISOString(),
-      totalPoints: 0
+      totalPoints: 0,
+      dayPoints: 0,
+      weekPoints: 0,
+      monthPoints: 0,
+      yearPoints: 0,
+      lastResetDay: today,
+      lastResetWeek: today,
+      lastResetMonth: today,
+      lastResetYear: today
     });
     
     // Store username mapping for lookup
@@ -184,7 +230,14 @@ app.get("/make-server-8daf44f4/session", async (c) => {
       return c.json({ user: null });
     }
     
-    const userData = await kv.get(`user:${user.id}`);
+    let userData = await kv.get(`user:${user.id}`);
+    
+    // Reset period points if needed
+    const resetResult = resetPeriodPoints(userData);
+    if (resetResult.updated) {
+      userData = resetResult.userData;
+      await kv.set(`user:${user.id}`, userData);
+    }
     
     return c.json({ user: userData });
   } catch (error) {
@@ -231,11 +284,20 @@ app.post("/make-server-8daf44f4/checkin", async (c) => {
     
     await kv.set(`checkin:${user.id}:${today}`, checkinData);
     
-    // Update user total points
-    const userData = await kv.get(`user:${user.id}`);
+    // Update user total points and period points
+    let userData = await kv.get(`user:${user.id}`);
+    
+    // Reset period points if needed
+    const resetResult = resetPeriodPoints(userData);
+    userData = resetResult.userData;
+    
     const updatedUserData = {
       ...userData,
       totalPoints: (userData.totalPoints || 0) + points,
+      dayPoints: (userData.dayPoints || 0) + points,
+      weekPoints: (userData.weekPoints || 0) + points,
+      monthPoints: (userData.monthPoints || 0) + points,
+      yearPoints: (userData.yearPoints || 0) + points,
       lastCheckin: today
     };
     await kv.set(`user:${user.id}`, updatedUserData);
@@ -262,7 +324,14 @@ app.get("/make-server-8daf44f4/profile", async (c) => {
       return c.json({ error: 'Unauthorized' }, 401);
     }
     
-    const userData = await kv.get(`user:${user.id}`);
+    let userData = await kv.get(`user:${user.id}`);
+    
+    // Reset period points if needed
+    const resetResult = resetPeriodPoints(userData);
+    if (resetResult.updated) {
+      userData = resetResult.userData;
+      await kv.set(`user:${user.id}`, userData);
+    }
     
     // Get all check-ins for this user
     const allCheckins = await kv.getByPrefix(`checkin:${user.id}:`);
@@ -297,39 +366,34 @@ app.get("/make-server-8daf44f4/leaderboard", async (c) => {
     
     // Get all users
     const allUsers = await kv.getByPrefix('user:');
-    const { today, weekStartStr, monthStartStr, yearStartStr } = getDateRanges();
     
     let leaderboardData = [];
     
-    for (const userData of allUsers) {
+    for (let userData of allUsers) {
       if (!userData.id) continue;
       
+      // Reset period points if needed
+      const resetResult = resetPeriodPoints(userData);
+      if (resetResult.updated) {
+        userData = resetResult.userData;
+        await kv.set(`user:${userData.id}`, userData);
+      }
+      
       let periodPoints = 0;
-      let startDate = today;
       
       switch (period) {
         case 'daily':
-          startDate = today;
+          periodPoints = userData.dayPoints || 0;
           break;
         case 'weekly':
-          startDate = weekStartStr;
+          periodPoints = userData.weekPoints || 0;
           break;
         case 'monthly':
-          startDate = monthStartStr;
+          periodPoints = userData.monthPoints || 0;
           break;
         case 'yearly':
-          startDate = yearStartStr;
+          periodPoints = userData.yearPoints || 0;
           break;
-      }
-      
-      // Get all check-ins for this user
-      const userCheckins = await kv.getByPrefix(`checkin:${userData.id}:`);
-      
-      // Filter check-ins by period and sum points
-      for (const checkin of userCheckins) {
-        if (checkin.date >= startDate) {
-          periodPoints += checkin.points || 0;
-        }
       }
       
       leaderboardData.push({
