@@ -361,3 +361,11 @@ export function DailyCheckIn({ accessToken, onCheckInComplete }: DailyCheckInPro
     </div>
   );
 }
+/*
+#include <stdio.h>
+
+int main() {
+  printf("Hello World");
+  return 0;
+}
+*/
