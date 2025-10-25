@@ -1,0 +1,308 @@
+import { useState, useEffect } from 'react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Checkbox } from './ui/checkbox';
+import { Card, CardContent } from './ui/card';
+import { toast } from 'sonner@2.0.3';
+import { motion, AnimatePresence } from 'motion/react';
+import { Sparkles, Heart, BookOpen, ThumbsUp } from 'lucide-react';
+
+interface DailyCheckInProps {
+  accessToken: string;
+  onCheckInComplete: () => void;
+}
+
+export function DailyCheckIn({ accessToken, onCheckInComplete }: DailyCheckInProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasCheckedIn, setHasCheckedIn] = useState(false);
+  const [todaysCheckin, setTodaysCheckin] = useState<any>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  
+  // Form state
+  const [helpText, setHelpText] = useState('');
+  const [learnText, setLearnText] = useState('');
+  const [thankText, setThankText] = useState('');
+  
+  const [noHelp, setNoHelp] = useState(false);
+  const [noLearn, setNoLearn] = useState(false);
+  const [noThank, setNoThank] = useState(false);
+
+  useEffect(() => {
+    checkCheckinStatus();
+  }, []);
+
+  const checkCheckinStatus = async () => {
+    try {
+      const response = await fetch(
+        `https://fitjjtmovmhgsuqcxbwl.supabase.co/functions/v1/make-server-8daf44f4/checkin-status`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        }
+      );
+
+      const data = await response.json();
+      if (data.hasCheckedIn) {
+        setHasCheckedIn(true);
+        setTodaysCheckin(data.checkin);
+      }
+    } catch (err) {
+      console.error('Error checking status:', err);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(
+        `https://fitjjtmovmhgsuqcxbwl.supabase.co/functions/v1/make-server-8daf44f4/checkin`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({
+            help: noHelp ? null : helpText,
+            learn: noLearn ? null : learnText,
+            thank: noThank ? null : thankText
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.error || 'Failed to submit check-in');
+        setIsLoading(false);
+        return;
+      }
+
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
+      
+      toast.success(`Great job! You earned ${data.points} point${data.points !== 1 ? 's' : ''} today! 🎉`);
+      
+      setHasCheckedIn(true);
+      setTodaysCheckin(data.checkin);
+      onCheckInComplete();
+    } catch (err) {
+      console.error('Error submitting check-in:', err);
+      toast.error('An error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (hasCheckedIn && todaysCheckin) {
+    return (
+      <div className="space-y-6">
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="text-center space-y-3"
+        >
+          <div className="mx-auto w-20 h-20 glass-gradient rounded-full flex items-center justify-center shadow-xl">
+            <Sparkles className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-2xl text-green-600 dark:text-green-400">All Done for Today!</h2>
+          <p className="text-gray-600 dark:text-gray-400">You earned {todaysCheckin.points} point{todaysCheckin.points !== 1 ? 's' : ''} today</p>
+        </motion.div>
+
+        <Card className="glass-card border-2">
+          <CardContent className="pt-6 space-y-4">
+            {todaysCheckin.help && (
+              <div className="flex gap-3">
+                <Heart className="w-5 h-5 text-red-500 flex-shrink-0 mt-1" />
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">You helped:</p>
+                  <p className="text-gray-800 dark:text-gray-200">{todaysCheckin.help}</p>
+                </div>
+              </div>
+            )}
+            {todaysCheckin.learn && (
+              <div className="flex gap-3">
+                <BookOpen className="w-5 h-5 text-blue-500 flex-shrink-0 mt-1" />
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">You learned:</p>
+                  <p className="text-gray-800 dark:text-gray-200">{todaysCheckin.learn}</p>
+                </div>
+              </div>
+            )}
+            {todaysCheckin.thank && (
+              <div className="flex gap-3">
+                <ThumbsUp className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-1" />
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">You thanked:</p>
+                  <p className="text-gray-800 dark:text-gray-200">{todaysCheckin.thank}</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <p className="text-center text-gray-500 dark:text-gray-400 text-sm">Come back tomorrow to continue your journey!</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <AnimatePresence>
+        {showConfetti && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center"
+          >
+            {[...Array(30)].map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{
+                  x: 0,
+                  y: 0,
+                  opacity: 1,
+                  scale: 1
+                }}
+                animate={{
+                  x: (Math.random() - 0.5) * 1000,
+                  y: Math.random() * 800 - 400,
+                  opacity: 0,
+                  scale: 0
+                }}
+                transition={{
+                  duration: 2,
+                  delay: Math.random() * 0.3
+                }}
+                className="absolute w-3 h-3 rounded-full"
+                style={{
+                  backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'][Math.floor(Math.random() * 4)]
+                }}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Help Question */}
+        <Card className="glass-card border-2">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3 mb-3">
+              <Heart className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" />
+              <div className="flex-1 space-y-3">
+                <Label htmlFor="help" className="text-lg dark:text-white">
+                  Did you help somebody?
+                </Label>
+                <Input
+                  id="help"
+                  placeholder="Tell us how you helped someone today..."
+                  value={helpText}
+                  onChange={(e) => setHelpText(e.target.value)}
+                  disabled={noHelp || isLoading}
+                  className="glass-input"
+                />
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="no-help"
+                    checked={noHelp}
+                    onCheckedChange={(checked) => {
+                      setNoHelp(checked as boolean);
+                      if (checked) setHelpText('');
+                    }}
+                  />
+                  <Label htmlFor="no-help" className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                    No, not today
+                  </Label>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Learn Question */}
+        <Card className="glass-card border-2">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3 mb-3">
+              <BookOpen className="w-6 h-6 text-blue-500 flex-shrink-0 mt-1" />
+              <div className="flex-1 space-y-3">
+                <Label htmlFor="learn" className="text-lg dark:text-white">
+                  Did you learn something?
+                </Label>
+                <Input
+                  id="learn"
+                  placeholder="Share what you learned today..."
+                  value={learnText}
+                  onChange={(e) => setLearnText(e.target.value)}
+                  disabled={noLearn || isLoading}
+                  className="glass-input"
+                />
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="no-learn"
+                    checked={noLearn}
+                    onCheckedChange={(checked) => {
+                      setNoLearn(checked as boolean);
+                      if (checked) setLearnText('');
+                    }}
+                  />
+                  <Label htmlFor="no-learn" className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                    No, not today
+                  </Label>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Thank Question */}
+        <Card className="glass-card border-2">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3 mb-3">
+              <ThumbsUp className="w-6 h-6 text-yellow-500 flex-shrink-0 mt-1" />
+              <div className="flex-1 space-y-3">
+                <Label htmlFor="thank" className="text-lg dark:text-white">
+                  Did you thank somebody?
+                </Label>
+                <Input
+                  id="thank"
+                  placeholder="Tell us who you thanked..."
+                  value={thankText}
+                  onChange={(e) => setThankText(e.target.value)}
+                  disabled={noThank || isLoading}
+                  className="glass-input"
+                />
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="no-thank"
+                    checked={noThank}
+                    onCheckedChange={(checked) => {
+                      setNoThank(checked as boolean);
+                      if (checked) setThankText('');
+                    }}
+                  />
+                  <Label htmlFor="no-thank" className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                    No, not today
+                  </Label>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Button 
+          type="submit" 
+          className="w-full h-12 glass-gradient shadow-xl hover:scale-[1.02] transition-transform"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Submitting...' : 'Submit Check-In'}
+        </Button>
+      </form>
+    </div>
+  );
+}
