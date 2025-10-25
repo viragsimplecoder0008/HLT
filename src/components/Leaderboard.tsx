@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { Trophy, Medal, Award } from 'lucide-react';
 import { motion } from 'motion/react';
+import { projectId } from '../utils/supabase/info';
 
 interface LeaderboardProps {
   accessToken: string;
@@ -30,7 +31,7 @@ export function Leaderboard({ accessToken }: LeaderboardProps) {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://fitjjtmovmhgsuqcxbwl.supabase.co/functions/v1/make-server-8daf44f4/leaderboard?period=${period}`,
+        `https://${projectId}.supabase.co/functions/v1/make-server-8daf44f4/leaderboard?period=${period}`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`
@@ -89,7 +90,7 @@ export function Leaderboard({ accessToken }: LeaderboardProps) {
   return (
     <div className="space-y-6">
       <Tabs value={period} onValueChange={(v) => setPeriod(v as any)} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 glass-card">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="daily">Daily</TabsTrigger>
           <TabsTrigger value="weekly">Weekly</TabsTrigger>
           <TabsTrigger value="monthly">Monthly</TabsTrigger>
@@ -97,10 +98,13 @@ export function Leaderboard({ accessToken }: LeaderboardProps) {
         </TabsList>
 
         <TabsContent value={period} className="mt-6">
-          <Card className="glass-card border-2">
+          <Card className="glass-card border-0 shadow-2xl">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 dark:text-white">
-                <Trophy className="w-5 h-5 text-yellow-500" />
+              <CardTitle className="flex items-center gap-3 dark:text-white">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center shadow-lg relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20" />
+                  <Trophy className="w-6 h-6 text-white relative z-10" />
+                </div>
                 {getPeriodTitle()}
               </CardTitle>
             </CardHeader>
@@ -121,18 +125,18 @@ export function Leaderboard({ accessToken }: LeaderboardProps) {
                       transition={{ delay: index * 0.05 }}
                     >
                       <div
-                        className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${
+                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] ${
                           entry.rank <= 3
-                            ? 'glass-gradient border-yellow-300 dark:border-yellow-500'
-                            : 'glass-input border-gray-300 dark:border-gray-600'
+                            ? 'glass-gradient text-white border-0'
+                            : 'glass-badge border-0'
                         }`}
                       >
                         <div className="flex-shrink-0">
                           {getRankIcon(entry.rank)}
                         </div>
                         
-                        <Avatar className="flex-shrink-0 border-2 border-white/30">
-                          <AvatarFallback className="glass-gradient text-white">
+                        <Avatar className="flex-shrink-0 border-2 border-white/50 shadow-md">
+                          <AvatarFallback className={entry.rank <= 3 ? 'bg-white/30 text-white' : 'glass-gradient text-white'}>
                             {entry.username.substring(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>

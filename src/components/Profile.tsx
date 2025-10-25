@@ -15,6 +15,7 @@ import {
   Target
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { projectId } from '../utils/supabase/info';
 
 interface ProfileProps {
   accessToken: string;
@@ -42,7 +43,7 @@ export function Profile({ accessToken, user, onSignOut }: ProfileProps) {
   const fetchProfile = async () => {
     try {
       const response = await fetch(
-        `https://fitjjtmovmhgsuqcxbwl.supabase.co/functions/v1/make-server-8daf44f4/profile`,
+        `https://${projectId}.supabase.co/functions/v1/make-server-8daf44f4/profile`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`
@@ -87,19 +88,19 @@ export function Profile({ accessToken, user, onSignOut }: ProfileProps) {
   return (
     <div className="space-y-6">
       {/* User Info Card */}
-      <Card className="glass-gradient text-white border-2 border-white/30 shadow-xl">
-        <CardContent className="pt-6">
+      <Card className="glass-gradient text-white border-0 shadow-2xl overflow-hidden relative glass-shimmer">
+        <CardContent className="pt-6 relative z-10">
           <div className="flex items-center gap-4">
-            <Avatar className="w-20 h-20 border-4 border-white/50 shadow-lg">
-              <AvatarFallback className="bg-white text-blue-600 text-2xl">
+            <Avatar className="w-24 h-24 border-4 border-white/50 shadow-2xl">
+              <AvatarFallback className="bg-white/30 backdrop-blur-sm text-white">
                 {user?.username?.substring(0, 2).toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h2 className="text-2xl mb-1">{user?.username || 'User'}</h2>
+              <h2 className="mb-1">{user?.username || 'User'}</h2>
               <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
-                <span className="text-sm opacity-90">
+                <TrendingUp className="w-5 h-5" />
+                <span className="opacity-90">
                   {stats?.totalPoints || 0} Total Points
                 </span>
               </div>
@@ -115,10 +116,13 @@ export function Profile({ accessToken, user, onSignOut }: ProfileProps) {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="glass-card border-2">
+          <Card className="glass-card border-0 shadow-lg hover:shadow-xl hover:scale-105 transition-all">
             <CardContent className="pt-6 text-center">
-              <Calendar className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-              <p className="text-2xl mb-1 dark:text-white">{stats?.totalCheckins || 0}</p>
+              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20" />
+                <Calendar className="w-6 h-6 text-white relative z-10" />
+              </div>
+              <p className="dark:text-white">{stats?.totalCheckins || 0}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">Check-ins</p>
             </CardContent>
           </Card>
@@ -129,10 +133,13 @@ export function Profile({ accessToken, user, onSignOut }: ProfileProps) {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="glass-card border-2">
+          <Card className="glass-card border-0 shadow-lg hover:shadow-xl hover:scale-105 transition-all">
             <CardContent className="pt-6 text-center">
-              <Heart className="w-8 h-8 mx-auto mb-2 text-red-500" />
-              <p className="text-2xl mb-1 dark:text-white">{stats?.totalHelps || 0}</p>
+              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center shadow-lg relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20" />
+                <Heart className="w-6 h-6 text-white relative z-10" />
+              </div>
+              <p className="dark:text-white">{stats?.totalHelps || 0}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">Times Helped</p>
             </CardContent>
           </Card>
@@ -143,10 +150,13 @@ export function Profile({ accessToken, user, onSignOut }: ProfileProps) {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="glass-card border-2">
+          <Card className="glass-card border-0 shadow-lg hover:shadow-xl hover:scale-105 transition-all">
             <CardContent className="pt-6 text-center">
-              <BookOpen className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-              <p className="text-2xl mb-1 dark:text-white">{stats?.totalLearns || 0}</p>
+              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20" />
+                <BookOpen className="w-6 h-6 text-white relative z-10" />
+              </div>
+              <p className="dark:text-white">{stats?.totalLearns || 0}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">Things Learned</p>
             </CardContent>
           </Card>
@@ -157,10 +167,13 @@ export function Profile({ accessToken, user, onSignOut }: ProfileProps) {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          <Card className="glass-card border-2">
+          <Card className="glass-card border-0 shadow-lg hover:shadow-xl hover:scale-105 transition-all">
             <CardContent className="pt-6 text-center">
-              <ThumbsUp className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
-              <p className="text-2xl mb-1 dark:text-white">{stats?.totalThanks || 0}</p>
+              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center shadow-lg relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20" />
+                <ThumbsUp className="w-6 h-6 text-white relative z-10" />
+              </div>
+              <p className="dark:text-white">{stats?.totalThanks || 0}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">Times Thanked</p>
             </CardContent>
           </Card>
@@ -168,10 +181,13 @@ export function Profile({ accessToken, user, onSignOut }: ProfileProps) {
       </div>
 
       {/* Progress Tracker */}
-      <Card className="glass-card border-2">
+      <Card className="glass-card border-0 shadow-xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg dark:text-white">
-            <Target className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-3 dark:text-white">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20" />
+              <Target className="w-5 h-5 text-white relative z-10" />
+            </div>
             Monthly Progress
           </CardTitle>
         </CardHeader>
@@ -204,10 +220,13 @@ export function Profile({ accessToken, user, onSignOut }: ProfileProps) {
 
       {/* Badges */}
       {badges.length > 0 && (
-        <Card className="glass-card border-2">
+        <Card className="glass-card border-0 shadow-xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg dark:text-white">
-              <Award className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-3 dark:text-white">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-500 flex items-center justify-center shadow-lg relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20" />
+                <Award className="w-5 h-5 text-white relative z-10" />
+              </div>
               Your Badges
             </CardTitle>
           </CardHeader>
@@ -221,10 +240,10 @@ export function Profile({ accessToken, user, onSignOut }: ProfileProps) {
                   transition={{ delay: index * 0.1, type: 'spring' }}
                 >
                   <Badge 
-                    variant="outline" 
-                    className="w-full justify-start gap-2 py-2 px-3 glass-gradient border-yellow-300 dark:border-yellow-500 text-white"
+                    variant="default" 
+                    className="w-full justify-start gap-2 py-3 px-4 text-white shadow-lg hover:shadow-xl"
                   >
-                    <span className="text-lg">{badge.icon}</span>
+                    <span>{badge.icon}</span>
                     <span className="text-sm">{badge.name}</span>
                   </Badge>
                 </motion.div>
@@ -236,10 +255,10 @@ export function Profile({ accessToken, user, onSignOut }: ProfileProps) {
 
       {/* Last Check-in */}
       {stats?.lastCheckin && (
-        <Card className="glass-card border-2">
+        <Card className="glass-card border-0 shadow-lg">
           <CardContent className="pt-6 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">Last check-in</p>
-            <p className="text-blue-600 dark:text-blue-400">{stats.lastCheckin}</p>
+            <p className="text-blue-600 dark:text-blue-400 mt-1">{stats.lastCheckin}</p>
           </CardContent>
         </Card>
       )}
@@ -247,7 +266,7 @@ export function Profile({ accessToken, user, onSignOut }: ProfileProps) {
       {/* Sign Out Button */}
       <Button 
         variant="outline" 
-        className="w-full glass-card hover:scale-[1.02] transition-transform"
+        className="w-full h-12 hover:scale-[1.02] transition-all shadow-lg"
         onClick={onSignOut}
       >
         Sign Out

@@ -7,6 +7,7 @@ import { Toaster } from './components/ui/sonner';
 import { Home, Trophy, User, Moon, Sun } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTheme } from './hooks/useTheme';
+import logoImage from 'figma:asset/42646e4fa1da5dfeb0377d7085b95bf79b2ecdfe.png';
 
 type Tab = 'home' | 'leaderboard' | 'profile';
 
@@ -52,31 +53,40 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-yellow-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-colors">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-yellow-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors relative overflow-hidden">
+      {/* Animated background glass orbs for depth */}
+      <div className="fixed top-0 left-0 w-[500px] h-[500px] bg-gradient-to-br from-blue-400/20 to-blue-600/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 animate-pulse" style={{ animationDuration: '4s' }} />
+      <div className="fixed bottom-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-green-400/20 to-emerald-600/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 animate-pulse" style={{ animationDuration: '6s', animationDelay: '1s' }} />
+      <div className="fixed top-1/2 left-1/2 w-[450px] h-[450px] bg-gradient-to-br from-yellow-400/15 to-amber-600/8 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 animate-pulse" style={{ animationDuration: '5s', animationDelay: '2s' }} />
+      
       <Toaster />
       
       {/* Header */}
-      <header className="glass sticky top-0 z-10">
+      <header className="glass-panel sticky top-0 z-10 border-b-0">
         <div className="max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 glass-gradient rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-white">HLT</span>
+              <div className="w-14 h-14 rounded-full flex items-center justify-center relative overflow-hidden">
+                <img 
+                  src={logoImage} 
+                  alt="HLT Logo" 
+                  className="w-full h-full object-cover rounded-full"
+                />
               </div>
               <div>
-                <h1 className="text-xl dark:text-white">Help, Learn, Thank</h1>
+                <h1 className="dark:text-white">Help, Learn, Thank</h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Build positive habits daily</p>
               </div>
             </div>
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-full glass-card hover:scale-110 transition-transform"
+              className="p-3 rounded-2xl glass-button hover:scale-110 transition-all shadow-lg"
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? (
-                <Sun className="w-5 h-5 text-yellow-500" />
+                <Sun className="w-5 h-5 text-yellow-400" />
               ) : (
-                <Moon className="w-5 h-5 text-slate-700" />
+                <Moon className="w-5 h-5 text-slate-700 dark:text-slate-300" />
               )}
             </button>
           </div>
@@ -140,15 +150,15 @@ export default function App() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 glass shadow-lg">
+      <nav className="fixed bottom-0 left-0 right-0 glass-panel border-t-0 shadow-2xl">
         <div className="max-w-2xl mx-auto px-4">
-          <div className="grid grid-cols-3 gap-1">
+          <div className="grid grid-cols-3 gap-2 py-2">
             <button
               onClick={() => setActiveTab('home')}
-              className={`flex flex-col items-center gap-1 py-3 transition-all ${
+              className={`flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all duration-300 ${
                 activeTab === 'home'
-                  ? 'text-blue-600 dark:text-blue-400 scale-105'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                  ? 'glass-button text-blue-600 dark:text-blue-400 scale-105 shadow-lg'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:glass-badge'
               }`}
             >
               <Home className="w-6 h-6" />
@@ -157,10 +167,10 @@ export default function App() {
 
             <button
               onClick={() => setActiveTab('leaderboard')}
-              className={`flex flex-col items-center gap-1 py-3 transition-all ${
+              className={`flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all duration-300 ${
                 activeTab === 'leaderboard'
-                  ? 'text-blue-600 dark:text-blue-400 scale-105'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                  ? 'glass-button text-blue-600 dark:text-blue-400 scale-105 shadow-lg'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:glass-badge'
               }`}
             >
               <Trophy className="w-6 h-6" />
@@ -169,10 +179,10 @@ export default function App() {
 
             <button
               onClick={() => setActiveTab('profile')}
-              className={`flex flex-col items-center gap-1 py-3 transition-all ${
+              className={`flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all duration-300 ${
                 activeTab === 'profile'
-                  ? 'text-blue-600 dark:text-blue-400 scale-105'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                  ? 'glass-button text-blue-600 dark:text-blue-400 scale-105 shadow-lg'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:glass-badge'
               }`}
             >
               <User className="w-6 h-6" />

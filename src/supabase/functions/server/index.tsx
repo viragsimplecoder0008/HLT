@@ -9,15 +9,16 @@ const app = new Hono();
 // Enable logger
 app.use('*', logger(console.log));
 
-// Enable CORS for all routes and methods
+// Enable CORS for all routes and methods - must be broad for preflight
 app.use(
-  "/*",
+  "*",
   cors({
     origin: "*",
-    allowHeaders: ["Content-Type", "Authorization"],
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    exposeHeaders: ["Content-Length"],
-    maxAge: 600,
+    allowHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    exposeHeaders: ["Content-Length", "Content-Type"],
+    maxAge: 86400,
+    credentials: true,
   }),
 );
 
@@ -66,7 +67,12 @@ function getDateRanges() {
 
 // Health check endpoint
 app.get("/make-server-8daf44f4/health", (c) => {
-  return c.json({ status: "ok" });
+  return c.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// Explicit OPTIONS handler for all routes (helps with CORS preflight)
+app.options("/make-server-8daf44f4/*", (c) => {
+  return c.json({ ok: true });
 });
 
 // Sign up endpoint

@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Moon, Sun } from 'lucide-react';
 import type { Theme } from '../hooks/useTheme';
+import { projectId, publicAnonKey } from '../utils/supabase/info';
+import logoImage from 'figma:asset/42646e4fa1da5dfeb0377d7085b95bf79b2ecdfe.png';
 
 interface AuthScreenProps {
   onAuthSuccess: (accessToken: string, user: any) => void;
@@ -31,57 +33,75 @@ export function AuthScreen({ onAuthSuccess, theme, toggleTheme }: AuthScreenProp
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        `https://fitjjtmovmhgsuqcxbwl.supabase.co/functions/v1/make-server-8daf44f4/signup`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpdGpqdG1vdm1oZ3N1cWN4YndsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzNjgxMDgsImV4cCI6MjA3Njk0NDEwOH0.cYMfQaJ-p90UJm3zY5NTo7L2r4uoe9brJS0xUjiGMcA`
-          },
-          body: JSON.stringify({
-            username: signupUsername,
-            password: signupPassword
-          })
-        }
-      );
+      console.log('Attempting signup...', { username: signupUsername });
+      
+      const signupUrl = `https://${projectId}.supabase.co/functions/v1/make-server-8daf44f4/signup`;
+      console.log('Signup URL:', signupUrl);
+      
+      const response = await fetch(signupUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${publicAnonKey}`
+        },
+        body: JSON.stringify({
+          username: signupUsername,
+          password: signupPassword
+        })
+      });
 
-      const data = await response.json();
+      console.log('Signup response status:', response.status);
 
       if (!response.ok) {
-        setError(data.error || 'Signup failed');
+        const text = await response.text();
+        console.error('Signup error response:', text);
+        try {
+          const data = JSON.parse(text);
+          setError(data.error || 'Signup failed');
+        } catch {
+          setError(`Signup failed: ${response.status} ${response.statusText}`);
+        }
         setIsLoading(false);
         return;
       }
+
+      const data = await response.json();
+      console.log('Signup successful');
 
       // Now sign in with the new credentials
-      const signinResponse = await fetch(
-        `https://fitjjtmovmhgsuqcxbwl.supabase.co/functions/v1/make-server-8daf44f4/signin`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpdGpqdG1vdm1oZ3N1cWN4YndsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzNjgxMDgsImV4cCI6MjA3Njk0NDEwOH0.cYMfQaJ-p90UJm3zY5NTo7L2r4uoe9brJS0xUjiGMcA`
-          },
-          body: JSON.stringify({
-            username: signupUsername,
-            password: signupPassword
-          })
-        }
-      );
-
-      const signinData = await signinResponse.json();
+      const signinUrl = `https://${projectId}.supabase.co/functions/v1/make-server-8daf44f4/signin`;
+      const signinResponse = await fetch(signinUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${publicAnonKey}`
+        },
+        body: JSON.stringify({
+          username: signupUsername,
+          password: signupPassword
+        })
+      });
 
       if (!signinResponse.ok) {
-        setError(signinData.error || 'Auto-signin failed');
+        const text = await signinResponse.text();
+        console.error('Auto-signin error response:', text);
+        try {
+          const signinData = JSON.parse(text);
+          setError(signinData.error || 'Auto-signin failed. Please try signing in manually.');
+        } catch {
+          setError('Auto-signin failed. Please try signing in manually.');
+        }
         setIsLoading(false);
         return;
       }
+
+      const signinData = await signinResponse.json();
+      console.log('Auto-signin successful');
 
       onAuthSuccess(signinData.accessToken, signinData.user);
     } catch (err) {
       console.error('Signup error:', err);
-      setError('An error occurred during signup');
+      setError(`Connection error: ${err instanceof Error ? err.message : 'Unable to connect to server. Please check if the backend is deployed.'}`);
     } finally {
       setIsLoading(false);
     }
@@ -93,60 +113,81 @@ export function AuthScreen({ onAuthSuccess, theme, toggleTheme }: AuthScreenProp
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        `https://fitjjtmovmhgsuqcxbwl.supabase.co/functions/v1/make-server-8daf44f4/signin`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpdGpqdG1vdm1oZ3N1cWN4YndsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzNjgxMDgsImV4cCI6MjA3Njk0NDEwOH0.cYMfQaJ-p90UJm3zY5NTo7L2r4uoe9brJS0xUjiGMcA`
-          },
-          body: JSON.stringify({
-            username: signinUsername,
-            password: signinPassword
-          })
-        }
-      );
+      console.log('Attempting signin...', { username: signinUsername });
+      
+      const signinUrl = `https://${projectId}.supabase.co/functions/v1/make-server-8daf44f4/signin`;
+      console.log('Signin URL:', signinUrl);
+      
+      const response = await fetch(signinUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${publicAnonKey}`
+        },
+        body: JSON.stringify({
+          username: signinUsername,
+          password: signinPassword
+        })
+      });
 
-      const data = await response.json();
+      console.log('Signin response status:', response.status);
 
       if (!response.ok) {
-        setError(data.error || 'Signin failed');
+        const text = await response.text();
+        console.error('Signin error response:', text);
+        try {
+          const data = JSON.parse(text);
+          setError(data.error || 'Signin failed');
+        } catch {
+          setError(`Signin failed: ${response.status} ${response.statusText}`);
+        }
         setIsLoading(false);
         return;
       }
 
+      const data = await response.json();
+      console.log('Signin successful');
+
       onAuthSuccess(data.accessToken, data.user);
     } catch (err) {
       console.error('Signin error:', err);
-      setError('An error occurred during signin');
+      setError(`Connection error: ${err instanceof Error ? err.message : 'Unable to connect to server. Please check if the backend is deployed.'}`);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-green-50 to-yellow-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4 transition-colors relative">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-green-50 to-yellow-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4 transition-colors relative overflow-hidden">
+      {/* Animated decorative glass orbs creating depth */}
+      <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-blue-400/25 to-cyan-500/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-br from-green-400/25 to-emerald-500/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-br from-yellow-400/15 to-amber-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }} />
+      
       {/* Theme Toggle */}
       <button
         onClick={toggleTheme}
-        className="absolute top-4 right-4 p-3 glass-card rounded-full hover:scale-110 transition-transform z-10"
+        className="absolute top-6 right-6 p-3 glass-button rounded-full hover:scale-110 transition-all z-10 shadow-lg"
         aria-label="Toggle theme"
       >
         {theme === 'dark' ? (
-          <Sun className="w-6 h-6 text-yellow-500" />
+          <Sun className="w-6 h-6 text-yellow-400" />
         ) : (
-          <Moon className="w-6 h-6 text-slate-700" />
+          <Moon className="w-6 h-6 text-slate-700 dark:text-slate-300" />
         )}
       </button>
 
-      <Card className="w-full max-w-md glass-card border-2">
-        <CardHeader className="text-center space-y-2">
-          <div className="mx-auto w-20 h-20 glass-gradient rounded-full flex items-center justify-center mb-2 shadow-xl">
-            <span className="text-white text-2xl">HLT</span>
+      <Card className="w-full max-w-md glass-card border-0 shadow-2xl relative z-10">
+        <CardHeader className="text-center space-y-3 pb-6">
+          <div className="mx-auto w-40 h-40 flex items-center justify-center mb-3 relative overflow-hidden rounded-full">
+            <img 
+              src={logoImage} 
+              alt="HLT Logo" 
+              className="w-full h-full object-cover rounded-full"
+            />
           </div>
-          <CardTitle className="text-3xl dark:text-white">Help, Learn, Thank</CardTitle>
-          <CardDescription className="dark:text-gray-400">
+          <CardTitle className="dark:text-white">Help, Learn, Thank</CardTitle>
+          <CardDescription className="dark:text-gray-300">
             Build positive daily habits
           </CardDescription>
         </CardHeader>
@@ -182,7 +223,14 @@ export function AuthScreen({ onAuthSuccess, theme, toggleTheme }: AuthScreenProp
                   />
                 </div>
                 {error && (
-                  <div className="text-red-500 text-sm">{error}</div>
+                  <div className="glass-card border-red-200 dark:border-red-900 p-3 space-y-1">
+                    <div className="text-red-600 dark:text-red-400 text-sm">{error}</div>
+                    {error.includes('connect') && (
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                        The backend server may not be deployed. Please check your Supabase Edge Functions.
+                      </div>
+                    )}
+                  </div>
                 )}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? 'Signing in...' : 'Sign In'}
@@ -215,7 +263,14 @@ export function AuthScreen({ onAuthSuccess, theme, toggleTheme }: AuthScreenProp
                   />
                 </div>
                 {error && (
-                  <div className="text-red-500 text-sm">{error}</div>
+                  <div className="glass-card border-red-200 dark:border-red-900 p-3 space-y-1">
+                    <div className="text-red-600 dark:text-red-400 text-sm">{error}</div>
+                    {error.includes('connect') && (
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                        The backend server may not be deployed. Please check your Supabase Edge Functions.
+                      </div>
+                    )}
+                  </div>
                 )}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? 'Creating account...' : 'Sign Up'}
