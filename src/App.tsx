@@ -11,7 +11,7 @@ import { motion } from 'motion/react';
 import { useTheme } from './hooks/useTheme';
 import { checkBackendHealth } from './utils/api';
 import { projectId } from './utils/supabase/info';
-import logoImage from 'figma:asset/6d8f4ca8453fef395dae5295369d777acb49f1cc.png';
+import { ImageWithFallback } from './components/figma/ImageWithFallback';
 
 type Tab = 'home' | 'groups' | 'leaderboard' | 'profile' | 'superadmin';
 
@@ -136,12 +136,11 @@ export default function App() {
         <div className="max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-full flex items-center justify-center relative overflow-hidden">
-                <img 
-                  src={logoImage} 
-                  alt="HLT Logo" 
-                  className="w-full h-full object-cover rounded-full"
-                />
+              <div className="w-14 h-14 rounded-full flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-blue-500 via-green-500 to-yellow-500 shadow-lg">
+                <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20" />
+                <div className="relative z-10 flex items-center justify-center w-full h-full">
+                  <span className="text-2xl font-bold text-white">HLT</span>
+                </div>
               </div>
               <div>
                 <h1 className="text-white">Help, Learn, Thank</h1>
@@ -242,7 +241,7 @@ export default function App() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 glass-panel border-t-0 shadow-2xl">
+      <nav className="fixed bottom-0 left-0 right-0 glass-panel border-t-0 shadow-2xl z-50">
         <div className="max-w-2xl mx-auto px-4">
           <div className={`grid ${user?.selectedRole === 'superadmin' ? 'grid-cols-5' : 'grid-cols-4'} gap-2 py-2`}>
             <button

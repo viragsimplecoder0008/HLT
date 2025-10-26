@@ -8,7 +8,6 @@ import { Alert, AlertDescription } from './ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { checkBackendHealth } from '../utils/api';
-import logoImage from 'figma:asset/6d8f4ca8453fef395dae5295369d777acb49f1cc.png';
 
 interface AuthScreenProps {
   onAuthSuccess: (accessToken: string, user: any) => void;
@@ -269,12 +268,11 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
 
       <Card className="w-full max-w-md glass-card border-0 shadow-2xl relative z-10">
         <CardHeader className="text-center space-y-3 pb-6">
-          <div className="mx-auto w-40 h-40 flex items-center justify-center mb-3 relative overflow-hidden rounded-full">
-            <img 
-              src={logoImage} 
-              alt="HLT Logo" 
-              className="w-full h-full object-cover rounded-full"
-            />
+          <div className="mx-auto w-40 h-40 flex items-center justify-center mb-3 relative overflow-hidden rounded-full bg-gradient-to-br from-blue-500 via-green-500 to-yellow-500 shadow-2xl">
+            <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20" />
+            <div className="relative z-10 flex items-center justify-center w-full h-full">
+              <span className="text-6xl font-bold text-white">HLT</span>
+            </div>
           </div>
           <CardTitle className="text-white">Help, Learn, Thank</CardTitle>
           <CardDescription className="text-gray-300">

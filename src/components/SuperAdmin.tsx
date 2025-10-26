@@ -82,7 +82,10 @@ export function SuperAdmin({ accessToken }: SuperAdminProps) {
         totalEntries: data.totalEntries || 0
       }));
     } catch (error: any) {
-      toast.error(error.message || 'Failed to load unified leaderboard');
+      console.error('Failed to load unified leaderboard:', error);
+      if (!error.message?.includes('404') && !error.message?.includes('403')) {
+        toast.error(error.message || 'Failed to load unified leaderboard');
+      }
     }
   };
 
@@ -92,7 +95,10 @@ export function SuperAdmin({ accessToken }: SuperAdminProps) {
       setAllUsers(data.users || []);
       setStats(prev => ({ ...prev, totalUsers: data.users?.length || 0 }));
     } catch (error: any) {
-      toast.error(error.message || 'Failed to load users');
+      console.error('Failed to load users:', error);
+      if (!error.message?.includes('404') && !error.message?.includes('403')) {
+        toast.error(error.message || 'Failed to load users');
+      }
     }
   };
 
@@ -102,7 +108,10 @@ export function SuperAdmin({ accessToken }: SuperAdminProps) {
       setAllGroups(data.groups || []);
       setStats(prev => ({ ...prev, totalGroups: data.groups?.length || 0 }));
     } catch (error: any) {
-      toast.error(error.message || 'Failed to load groups');
+      console.error('Failed to load groups:', error);
+      if (!error.message?.includes('404') && !error.message?.includes('403')) {
+        toast.error(error.message || 'Failed to load groups');
+      }
     }
   };
 
@@ -112,7 +121,10 @@ export function SuperAdmin({ accessToken }: SuperAdminProps) {
       setAllCheckins(data.checkins || []);
       setStats(prev => ({ ...prev, totalCheckins: data.checkins?.length || 0 }));
     } catch (error: any) {
-      toast.error(error.message || 'Failed to load check-ins');
+      console.error('Failed to load check-ins:', error);
+      if (!error.message?.includes('404') && !error.message?.includes('403')) {
+        toast.error(error.message || 'Failed to load check-ins');
+      }
     }
   };
 

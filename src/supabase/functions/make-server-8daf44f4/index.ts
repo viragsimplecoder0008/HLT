@@ -28,9 +28,15 @@ async function initializeSuperAdmin() {
       }
       
       // Create superadmin auth user
+      const superadminPassword = Deno.env.get('SUPERADMIN_PASSWORD');
+      if (!superadminPassword) {
+        console.log('SUPERADMIN_PASSWORD environment variable not set. Skipping superadmin creation.');
+        continue;
+      }
+      
       const { data, error } = await supabase.auth.admin.createUser({
         email,
-        password: 'SuperAdmin123!', // Default password - should be changed
+        password: superadminPassword,
         user_metadata: { username },
         email_confirm: true
       });

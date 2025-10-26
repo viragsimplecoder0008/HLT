@@ -180,7 +180,7 @@ app.post("/make-server-8daf44f4/signup", async (c) => {
 // Sign in endpoint
 app.post("/make-server-8daf44f4/signin", async (c) => {
   try {
-    const { username, password } = await c.req.json();
+    const { username, password, role } = await c.req.json();
     
     if (!username || !password) {
       return c.json({ error: 'Username and password are required' }, 400);
@@ -204,10 +204,27 @@ app.post("/make-server-8daf44f4/signin", async (c) => {
     // Get user data
     const userData = await kv.get(`user:${data.user.id}`);
     
+    // Check if user is a superadmin (Viraj@hlt.app)
+    const isSuperAdmin = data.user.email === 'Viraj@hlt.app';
+    
+    // If superadmin and no role selected yet, return available roles
+    if (isSuperAdmin && !role) {
+      return c.json({
+        needsRoleSelection: true,
+        availableRoles: ['superadmin', 'user'],
+        accessToken: data.session.access_token,
+        user: userData
+      });
+    }
+    
+    // Return with selected role
+    const selectedRole = isSuperAdmin && role === 'superadmin' ? 'superadmin' : 'user';
+    
     return c.json({
       success: true,
       accessToken: data.session.access_token,
-      user: userData
+      user: userData,
+      selectedRole: selectedRole
     });
   } catch (error) {
     console.log('Error during signin:', error);

@@ -588,3 +588,45 @@ html {
     transparent
   );
 }
+
+/* Mobile Touch Optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Ensure buttons are tappable on mobile */
+  button, a, [role="button"] {
+    -webkit-tap-highlight-color: rgba(59, 130, 246, 0.3);
+    touch-action: manipulation;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Increase touch target size for better mobile UX */
+  button, a[role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Prevent text selection on mobile to improve button interaction */
+  .glass-card, .glass-button, .glass-panel {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Optimize hover effects for touch devices */
+  .glass-card:hover {
+    transform: none;
+  }
+
+  /* Add active state for better touch feedback */
+  button:active, a[role="button"]:active {
+    transform: scale(0.97);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* Prevent zoom on input focus on mobile Safari */
+@media screen and (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}

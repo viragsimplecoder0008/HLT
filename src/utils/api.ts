@@ -54,7 +54,10 @@ export async function apiRequest(endpoint: string, options: FetchOptions = {}) {
 
   const url = `${API_BASE_URL}${endpoint}`;
   
-  console.log(`API Request: ${method} ${url}`);
+  // Only log non-GET requests to reduce console noise
+  if (method !== 'GET') {
+    console.log(`API Request: ${method} ${url}`);
+  }
 
   try {
     const controller = new AbortController();
@@ -68,14 +71,20 @@ export async function apiRequest(endpoint: string, options: FetchOptions = {}) {
     });
 
     clearTimeout(timeoutId);
-    console.log(`API Response: ${response.status} ${response.statusText}`);
+    // Only log non-GET responses or errors to reduce console noise
+    if (method !== 'GET' || !response.ok) {
+      console.log(`API Response: ${response.status} ${response.statusText}`);
+    }
 
     // Handle non-JSON responses
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       const text = await response.text();
-      console.error('Non-JSON response:', text);
-      throw new Error(`Server error: ${response.status} ${response.statusText}`);
+      // Only log if it's not a 404 (endpoint might not be deployed yet)
+      if (response.status !== 404) {
+        console.error('Non-JSON response:', text);
+      }
+      throw new Error(`Server error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -90,7 +99,10 @@ export async function apiRequest(endpoint: string, options: FetchOptions = {}) {
       console.error('API request timeout');
       throw new Error('Request timeout - backend might not be deployed');
     }
-    console.error('API request failed:', error);
+    // Only log if it's not a 404 error
+    if (!(error instanceof Error && error.message.includes('404'))) {
+      console.error('API request failed:', error);
+    }
     throw error;
   }
 }

@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { toast } from 'sonner@2.0.3';
@@ -60,8 +60,12 @@ export function Groups({ accessToken, currentUserId }: GroupsProps) {
       if (data.groups && data.groups.length > 0 && !selectedGroup) {
         setSelectedGroup(data.groups[0]);
       }
-    } catch (error) {
-      console.error('Failed to load groups:', error);
+    } catch (error: any) {
+      // Only log/show error if it's not a 404 (groups endpoints might not be deployed yet)
+      if (!error.message?.includes('404')) {
+        console.error('Failed to load groups:', error);
+        toast.error('Failed to load groups. Please try again.');
+      }
     }
   };
 
@@ -69,8 +73,12 @@ export function Groups({ accessToken, currentUserId }: GroupsProps) {
     try {
       const data = await apiRequest('/invites', { accessToken });
       setInvites(data.invites || []);
-    } catch (error) {
-      console.error('Failed to load invites:', error);
+    } catch (error: any) {
+      // Only log/show error if it's not a 404
+      if (!error.message?.includes('404')) {
+        console.error('Failed to load invites:', error);
+        toast.error('Failed to load invites. Please try again.');
+      }
     }
   };
 
@@ -79,8 +87,11 @@ export function Groups({ accessToken, currentUserId }: GroupsProps) {
       const data = await apiRequest(`/groups/${groupId}`, { accessToken });
       setGroupMembers(data.members || []);
       setIsAdmin(data.isAdmin || false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load group details:', error);
+      if (!error.message?.includes('404')) {
+        toast.error('Failed to load group details.');
+      }
     }
   };
 
@@ -88,8 +99,11 @@ export function Groups({ accessToken, currentUserId }: GroupsProps) {
     try {
       const data = await apiRequest(`/groups/${groupId}/leaderboard?period=${period}`, { accessToken });
       setGroupLeaderboard(data.leaderboard || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load group leaderboard:', error);
+      if (!error.message?.includes('404')) {
+        toast.error('Failed to load leaderboard.');
+      }
     }
   };
 
@@ -110,7 +124,14 @@ export function Groups({ accessToken, currentUserId }: GroupsProps) {
       setGroupDescription('');
       loadGroups();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create group');
+      // Only show error if it's not a 404 (backend not deployed)
+      if (!error.message?.includes('404')) {
+        toast.error(error.message || 'Failed to create group');
+      } else {
+        toast.error('Groups feature requires backend deployment', {
+          description: 'Run: supabase functions deploy make-server-8daf44f4'
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -131,7 +152,12 @@ export function Groups({ accessToken, currentUserId }: GroupsProps) {
       setInviteDialogOpen(false);
       setInviteUsername('');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to invite user');
+      // Only show error if it's not a 404 (backend not deployed)
+      if (!error.message?.includes('404')) {
+        toast.error(error.message || 'Failed to invite user');
+      } else {
+        toast.error('Groups feature requires backend deployment');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -267,6 +293,9 @@ export function Groups({ accessToken, currentUserId }: GroupsProps) {
         <DialogContent className="glass-card border-0 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-white">Create a New Group</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Start a new group and invite members to join.
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateGroup} className="space-y-4">
             <div>
@@ -295,16 +324,23 @@ export function Groups({ accessToken, currentUserId }: GroupsProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Groups List */}
-      {groups.length === 0 ? (
+      {/* Backend Not Deployed Notice */}
+      {groups.length === 0 && invites.length === 0 && (
         <Card className="glass-card border-0 shadow-xl">
           <CardContent className="pt-6 text-center">
             <Users className="w-12 h-12 mx-auto text-gray-400 mb-3" />
             <p className="text-gray-400">You're not in any groups yet.</p>
             <p className="text-sm text-gray-500 mt-2">Create a group or wait for an invite!</p>
+            <p className="text-xs text-gray-600 mt-4">
+              If you just added this feature, make sure to deploy the Edge Function:
+              <code className="block mt-1 text-blue-400">supabase functions deploy make-server-8daf44f4</code>
+            </p>
           </CardContent>
         </Card>
-      ) : (
+      )}
+
+      {/* Groups List */}
+      {groups.length > 0 && (
         <>
           {/* Group Selector */}
           <div className="flex gap-2 overflow-x-auto pb-2">
@@ -358,6 +394,9 @@ export function Groups({ accessToken, currentUserId }: GroupsProps) {
                         <DialogContent className="glass-card border-0 shadow-2xl">
                           <DialogHeader>
                             <DialogTitle className="text-white">Edit Group</DialogTitle>
+                            <DialogDescription className="text-gray-400">
+                              Update your group's name and description.
+                            </DialogDescription>
                           </DialogHeader>
                           <form onSubmit={handleEditGroup} className="space-y-4">
                             <div>
@@ -393,6 +432,9 @@ export function Groups({ accessToken, currentUserId }: GroupsProps) {
                         <DialogContent className="glass-card border-0 shadow-2xl">
                           <DialogHeader>
                             <DialogTitle className="text-white">Invite User</DialogTitle>
+                            <DialogDescription className="text-gray-400">
+                              Enter a username to send them a group invitation.
+                            </DialogDescription>
                           </DialogHeader>
                           <form onSubmit={handleInviteUser} className="space-y-4">
                             <div>

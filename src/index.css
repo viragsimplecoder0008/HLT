@@ -142,9 +142,12 @@
     --text-xl--line-height: calc(1.75 / 1.25);
     --text-2xl: 1.5rem;
     --text-2xl--line-height: calc(2 / 1.5);
+    --text-6xl: 3.75rem;
+    --text-6xl--line-height: 1;
     --font-weight-normal: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
+    --font-weight-bold: 700;
     --tracking-tight: -.025em;
     --leading-relaxed: 1.625;
     --radius-xs: .125rem;
@@ -963,6 +966,10 @@
     cursor: pointer;
   }
 
+  .touch-auto {
+    touch-action: auto;
+  }
+
   .auto-rows-min {
     grid-auto-rows: min-content;
   }
@@ -993,6 +1000,10 @@
 
   .flex-col-reverse {
     flex-direction: column-reverse;
+  }
+
+  .flex-wrap {
+    flex-wrap: wrap;
   }
 
   .items-center {
@@ -1247,6 +1258,16 @@
     border-color: var(--color-yellow-300);
   }
 
+  .border-yellow-500\/30 {
+    border-color: color-mix(in srgb, oklch(.795 .184 86.047) 30%, transparent);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .border-yellow-500\/30 {
+      border-color: color-mix(in oklab, var(--color-yellow-500) 30%, transparent);
+    }
+  }
+
   .bg-amber-100 {
     background-color: var(--color-amber-100);
   }
@@ -1381,6 +1402,10 @@
     .bg-yellow-400\/20 {
       background-color: color-mix(in oklab, var(--color-yellow-400) 20%, transparent);
     }
+  }
+
+  .bg-yellow-500 {
+    background-color: var(--color-yellow-500);
   }
 
   .bg-yellow-500\/20 {
@@ -1551,6 +1576,12 @@
     }
   }
 
+  .via-green-500 {
+    --tw-gradient-via: var(--color-green-500);
+    --tw-gradient-via-stops: var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-via) var(--tw-gradient-via-position), var(--tw-gradient-to) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-via-stops);
+  }
+
   .via-slate-900 {
     --tw-gradient-via: var(--color-slate-900);
     --tw-gradient-via-stops: var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-via) var(--tw-gradient-via-position), var(--tw-gradient-to) var(--tw-gradient-to-position);
@@ -1717,13 +1748,14 @@
     }
   }
 
-  .to-yellow-600 {
-    --tw-gradient-to: var(--color-yellow-600);
+  .to-yellow-500 {
+    --tw-gradient-to: var(--color-yellow-500);
     --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
   }
 
-  .object-cover {
-    object-fit: cover;
+  .to-yellow-600 {
+    --tw-gradient-to: var(--color-yellow-600);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
   }
 
   .p-1 {
@@ -1839,6 +1871,11 @@
     line-height: var(--tw-leading, var(--text-2xl--line-height));
   }
 
+  .text-6xl {
+    font-size: var(--text-6xl);
+    line-height: var(--tw-leading, var(--text-6xl--line-height));
+  }
+
   .text-base {
     font-size: var(--text-base);
     line-height: var(--tw-leading, var(--text-base--line-height));
@@ -1867,6 +1904,11 @@
   .leading-none {
     --tw-leading: 1;
     line-height: 1;
+  }
+
+  .font-bold {
+    --tw-font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-bold);
   }
 
   .font-medium {
@@ -3027,6 +3069,41 @@ html {
 
 .dark .glass-shimmer:before {
   background: linear-gradient(90deg, #0000, #ffffff1a, #0000);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  button, a, [role="button"] {
+    -webkit-tap-highlight-color: #3b82f64d;
+    touch-action: manipulation;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  button, a[role="button"] {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .glass-card, .glass-button, .glass-panel {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .glass-card:hover {
+    transform: none;
+  }
+
+  button:active, a[role="button"]:active {
+    transition: transform .1s;
+    transform: scale(.97);
+  }
+}
+
+@media screen and (width <= 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
 }
 
 @property --tw-translate-x {

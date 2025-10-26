@@ -12,7 +12,8 @@ import {
   ThumbsUp, 
   Calendar,
   Award,
-  Target
+  Target,
+  Shield
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { projectId } from '../utils/supabase/info';
@@ -97,7 +98,15 @@ export function Profile({ accessToken, user, onSignOut }: ProfileProps) {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h2 className="mb-1">{user?.username || 'User'}</h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="mb-1">{user?.username || 'User'}</h2>
+                {user?.selectedRole === 'superadmin' && (
+                  <Badge className="bg-yellow-500 text-white border-0 shadow-lg text-xs mb-1">
+                    <Shield className="w-3 h-3 mr-1" />
+                    SuperAdmin
+                  </Badge>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5" />
                 <span className="opacity-90">
@@ -108,6 +117,30 @@ export function Profile({ accessToken, user, onSignOut }: ProfileProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* SuperAdmin Info Card */}
+      {user?.selectedRole === 'superadmin' && (
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+        >
+          <Card className="glass-card border border-yellow-500/30 shadow-xl">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-5 h-5 text-yellow-400" />
+                </div>
+                <div>
+                  <h3 className="text-yellow-400 font-medium mb-1">SuperAdmin Access</h3>
+                  <p className="text-sm text-gray-400">
+                    You have full system access. Use the Admin tab in the bottom navigation to manage users, groups, and view system-wide statistics.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-4">
