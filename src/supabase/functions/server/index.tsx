@@ -533,4 +533,585 @@ app.put("/make-server-8daf44f4/checkin", async (c) => {
   }
 });
 
+// ===========================
+// GROUPS ENDPOINTS
+// ===========================
+
+// Generate a unique group ID
+function generateGroupId(): string {
+  return `group_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+// Generate a unique invite ID
+function generateInviteId(): string {
+  return `invite_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+// Create a new group
+app.post("/make-server-8daf44f4/groups", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const user = await getCurrentUser(accessToken);
+    
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    const { name, description } = await c.req.json();
+    
+    if (!name || !name.trim()) {
+      return c.json({ error: 'Group name is required' }, 400);
+    }
+    
+    const groupId = generateGroupId();
+    const groupData = {
+      id: groupId,
+      name: name.trim(),
+      description: description?.trim() || '',
+      adminId: user.id,
+      createdAt: new Date().toISOString(),
+      memberIds: [user.id]
+    };
+    
+    await kv.set(`group:${groupId}`, groupData);
+    
+    // Add to user's groups list
+    const userGroups = await kv.get(`user_groups:${user.id}`) || [];
+    userGroups.push(groupId);
+    await kv.set(`user_groups:${user.id}`, userGroups);
+    
+    return c.json({
+      success: true,
+      group: groupData
+    });
+  } catch (error) {
+    console.log('Error creating group:', error);
+    return c.json({ error: 'Failed to create group' }, 500);
+  }
+});
+
+// Get user's groups
+app.get("/make-server-8daf44f4/groups", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const user = await getCurrentUser(accessToken);
+    
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    const userGroupIds = await kv.get(`user_groups:${user.id}`) || [];
+    const groups = [];
+    
+    for (const groupId of userGroupIds) {
+      const groupData = await kv.get(`group:${groupId}`);
+      if (groupData) {
+        groups.push({
+          id: groupData.id,
+          name: groupData.name,
+          description: groupData.description,
+          isAdmin: groupData.adminId === user.id,
+          memberCount: groupData.memberIds?.length || 0
+        });
+      }
+    }
+    
+    return c.json({ groups });
+  } catch (error) {
+    console.log('Error getting groups:', error);
+    return c.json({ error: 'Failed to get groups' }, 500);
+  }
+});
+
+// Get group details
+app.get("/make-server-8daf44f4/groups/:id", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const user = await getCurrentUser(accessToken);
+    
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    const groupId = c.req.param('id');
+    const groupData = await kv.get(`group:${groupId}`);
+    
+    if (!groupData) {
+      return c.json({ error: 'Group not found' }, 404);
+    }
+    
+    // Check if user is a member
+    if (!groupData.memberIds?.includes(user.id)) {
+      return c.json({ error: 'Not a member of this group' }, 403);
+    }
+    
+    // Get member details
+    const members = [];
+    for (const memberId of groupData.memberIds || []) {
+      const memberData = await kv.get(`user:${memberId}`);
+      if (memberData) {
+        members.push({
+          id: memberData.id,
+          username: memberData.username,
+          totalPoints: memberData.totalPoints || 0,
+          isAdmin: memberId === groupData.adminId
+        });
+      }
+    }
+    
+    return c.json({
+      group: groupData,
+      members,
+      isAdmin: groupData.adminId === user.id
+    });
+  } catch (error) {
+    console.log('Error getting group details:', error);
+    return c.json({ error: 'Failed to get group details' }, 500);
+  }
+});
+
+// Update group
+app.put("/make-server-8daf44f4/groups/:id", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const user = await getCurrentUser(accessToken);
+    
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    const groupId = c.req.param('id');
+    const groupData = await kv.get(`group:${groupId}`);
+    
+    if (!groupData) {
+      return c.json({ error: 'Group not found' }, 404);
+    }
+    
+    // Check if user is admin
+    if (groupData.adminId !== user.id) {
+      return c.json({ error: 'Only group admin can update group' }, 403);
+    }
+    
+    const { name, description } = await c.req.json();
+    
+    const updatedGroup = {
+      ...groupData,
+      name: name?.trim() || groupData.name,
+      description: description?.trim() || groupData.description,
+      updatedAt: new Date().toISOString()
+    };
+    
+    await kv.set(`group:${groupId}`, updatedGroup);
+    
+    return c.json({
+      success: true,
+      group: updatedGroup
+    });
+  } catch (error) {
+    console.log('Error updating group:', error);
+    return c.json({ error: 'Failed to update group' }, 500);
+  }
+});
+
+// Delete group
+app.delete("/make-server-8daf44f4/groups/:id", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const user = await getCurrentUser(accessToken);
+    
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    const groupId = c.req.param('id');
+    const groupData = await kv.get(`group:${groupId}`);
+    
+    if (!groupData) {
+      return c.json({ error: 'Group not found' }, 404);
+    }
+    
+    // Check if user is admin
+    if (groupData.adminId !== user.id) {
+      return c.json({ error: 'Only group admin can delete group' }, 403);
+    }
+    
+    // Remove group from all members' group lists
+    for (const memberId of groupData.memberIds || []) {
+      const userGroups = await kv.get(`user_groups:${memberId}`) || [];
+      const updatedGroups = userGroups.filter((id: string) => id !== groupId);
+      await kv.set(`user_groups:${memberId}`, updatedGroups);
+    }
+    
+    // Delete the group
+    await kv.del(`group:${groupId}`);
+    
+    // Delete any pending invites for this group
+    const allInvites = await kv.getByPrefix('invite:');
+    for (const invite of allInvites) {
+      if (invite.groupId === groupId) {
+        await kv.del(`invite:${invite.id}`);
+      }
+    }
+    
+    return c.json({ success: true });
+  } catch (error) {
+    console.log('Error deleting group:', error);
+    return c.json({ error: 'Failed to delete group' }, 500);
+  }
+});
+
+// Invite user to group
+app.post("/make-server-8daf44f4/groups/:id/invite", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const user = await getCurrentUser(accessToken);
+    
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    const groupId = c.req.param('id');
+    const { username } = await c.req.json();
+    
+    if (!username || !username.trim()) {
+      return c.json({ error: 'Username is required' }, 400);
+    }
+    
+    const groupData = await kv.get(`group:${groupId}`);
+    
+    if (!groupData) {
+      return c.json({ error: 'Group not found' }, 404);
+    }
+    
+    // Check if user is admin
+    if (groupData.adminId !== user.id) {
+      return c.json({ error: 'Only group admin can invite users' }, 403);
+    }
+    
+    // Find user by username
+    const inviteeId = await kv.get(`user_by_username:${username.trim()}`);
+    
+    if (!inviteeId) {
+      return c.json({ error: 'User not found' }, 404);
+    }
+    
+    // Check if user is already a member
+    if (groupData.memberIds?.includes(inviteeId)) {
+      return c.json({ error: 'User is already a member' }, 400);
+    }
+    
+    // Check if invite already exists
+    const existingInvites = await kv.getByPrefix('invite:');
+    const duplicateInvite = existingInvites.find(
+      (inv: any) => inv.groupId === groupId && inv.inviteeId === inviteeId && inv.status === 'pending'
+    );
+    
+    if (duplicateInvite) {
+      return c.json({ error: 'Invite already sent' }, 400);
+    }
+    
+    const inviteId = generateInviteId();
+    const inviteData = {
+      id: inviteId,
+      groupId,
+      groupName: groupData.name,
+      inviterId: user.id,
+      inviterUsername: (await kv.get(`user:${user.id}`))?.username || 'Unknown',
+      inviteeId,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+    
+    await kv.set(`invite:${inviteId}`, inviteData);
+    
+    return c.json({
+      success: true,
+      invite: inviteData
+    });
+  } catch (error) {
+    console.log('Error inviting user:', error);
+    return c.json({ error: 'Failed to invite user' }, 500);
+  }
+});
+
+// Get user's invites
+app.get("/make-server-8daf44f4/invites", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const user = await getCurrentUser(accessToken);
+    
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    const allInvites = await kv.getByPrefix('invite:');
+    const userInvites = allInvites.filter(
+      (invite: any) => invite.inviteeId === user.id && invite.status === 'pending'
+    );
+    
+    return c.json({ invites: userInvites });
+  } catch (error) {
+    console.log('Error getting invites:', error);
+    return c.json({ error: 'Failed to get invites' }, 500);
+  }
+});
+
+// Accept invite
+app.post("/make-server-8daf44f4/invites/:id/accept", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const user = await getCurrentUser(accessToken);
+    
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    const inviteId = c.req.param('id');
+    const inviteData = await kv.get(`invite:${inviteId}`);
+    
+    if (!inviteData) {
+      return c.json({ error: 'Invite not found' }, 404);
+    }
+    
+    if (inviteData.inviteeId !== user.id) {
+      return c.json({ error: 'Not your invite' }, 403);
+    }
+    
+    if (inviteData.status !== 'pending') {
+      return c.json({ error: 'Invite already processed' }, 400);
+    }
+    
+    const groupData = await kv.get(`group:${inviteData.groupId}`);
+    
+    if (!groupData) {
+      return c.json({ error: 'Group not found' }, 404);
+    }
+    
+    // Add user to group
+    if (!groupData.memberIds) {
+      groupData.memberIds = [];
+    }
+    if (!groupData.memberIds.includes(user.id)) {
+      groupData.memberIds.push(user.id);
+    }
+    await kv.set(`group:${inviteData.groupId}`, groupData);
+    
+    // Add group to user's groups
+    const userGroups = await kv.get(`user_groups:${user.id}`) || [];
+    if (!userGroups.includes(inviteData.groupId)) {
+      userGroups.push(inviteData.groupId);
+    }
+    await kv.set(`user_groups:${user.id}`, userGroups);
+    
+    // Update invite status
+    inviteData.status = 'accepted';
+    inviteData.respondedAt = new Date().toISOString();
+    await kv.set(`invite:${inviteId}`, inviteData);
+    
+    return c.json({ success: true });
+  } catch (error) {
+    console.log('Error accepting invite:', error);
+    return c.json({ error: 'Failed to accept invite' }, 500);
+  }
+});
+
+// Decline invite
+app.post("/make-server-8daf44f4/invites/:id/decline", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const user = await getCurrentUser(accessToken);
+    
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    const inviteId = c.req.param('id');
+    const inviteData = await kv.get(`invite:${inviteId}`);
+    
+    if (!inviteData) {
+      return c.json({ error: 'Invite not found' }, 404);
+    }
+    
+    if (inviteData.inviteeId !== user.id) {
+      return c.json({ error: 'Not your invite' }, 403);
+    }
+    
+    if (inviteData.status !== 'pending') {
+      return c.json({ error: 'Invite already processed' }, 400);
+    }
+    
+    // Update invite status
+    inviteData.status = 'declined';
+    inviteData.respondedAt = new Date().toISOString();
+    await kv.set(`invite:${inviteId}`, inviteData);
+    
+    return c.json({ success: true });
+  } catch (error) {
+    console.log('Error declining invite:', error);
+    return c.json({ error: 'Failed to decline invite' }, 500);
+  }
+});
+
+// Remove member from group
+app.delete("/make-server-8daf44f4/groups/:id/members/:memberId", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const user = await getCurrentUser(accessToken);
+    
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    const groupId = c.req.param('id');
+    const memberId = c.req.param('memberId');
+    const groupData = await kv.get(`group:${groupId}`);
+    
+    if (!groupData) {
+      return c.json({ error: 'Group not found' }, 404);
+    }
+    
+    // Check if user is admin
+    if (groupData.adminId !== user.id) {
+      return c.json({ error: 'Only group admin can remove members' }, 403);
+    }
+    
+    // Can't remove admin
+    if (memberId === groupData.adminId) {
+      return c.json({ error: 'Cannot remove group admin' }, 400);
+    }
+    
+    // Remove from group members
+    groupData.memberIds = (groupData.memberIds || []).filter((id: string) => id !== memberId);
+    await kv.set(`group:${groupId}`, groupData);
+    
+    // Remove from user's groups
+    const userGroups = await kv.get(`user_groups:${memberId}`) || [];
+    const updatedGroups = userGroups.filter((id: string) => id !== groupId);
+    await kv.set(`user_groups:${memberId}`, updatedGroups);
+    
+    return c.json({ success: true });
+  } catch (error) {
+    console.log('Error removing member:', error);
+    return c.json({ error: 'Failed to remove member' }, 500);
+  }
+});
+
+// Leave group
+app.post("/make-server-8daf44f4/groups/:id/leave", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const user = await getCurrentUser(accessToken);
+    
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    const groupId = c.req.param('id');
+    const groupData = await kv.get(`group:${groupId}`);
+    
+    if (!groupData) {
+      return c.json({ error: 'Group not found' }, 404);
+    }
+    
+    // Admin can't leave (must delete group or transfer ownership)
+    if (groupData.adminId === user.id) {
+      return c.json({ error: 'Group admin must delete group to leave' }, 400);
+    }
+    
+    // Remove from group members
+    groupData.memberIds = (groupData.memberIds || []).filter((id: string) => id !== user.id);
+    await kv.set(`group:${groupId}`, groupData);
+    
+    // Remove from user's groups
+    const userGroups = await kv.get(`user_groups:${user.id}`) || [];
+    const updatedGroups = userGroups.filter((id: string) => id !== groupId);
+    await kv.set(`user_groups:${user.id}`, updatedGroups);
+    
+    return c.json({ success: true });
+  } catch (error) {
+    console.log('Error leaving group:', error);
+    return c.json({ error: 'Failed to leave group' }, 500);
+  }
+});
+
+// Get group leaderboard
+app.get("/make-server-8daf44f4/groups/:id/leaderboard", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const user = await getCurrentUser(accessToken);
+    
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    const groupId = c.req.param('id');
+    const period = c.req.query('period') || 'daily';
+    
+    const groupData = await kv.get(`group:${groupId}`);
+    
+    if (!groupData) {
+      return c.json({ error: 'Group not found' }, 404);
+    }
+    
+    // Check if user is a member
+    if (!groupData.memberIds?.includes(user.id)) {
+      return c.json({ error: 'Not a member of this group' }, 403);
+    }
+    
+    const leaderboardData = [];
+    
+    for (const memberId of groupData.memberIds || []) {
+      let memberData = await kv.get(`user:${memberId}`);
+      if (!memberData) continue;
+      
+      // Reset period points if needed
+      const resetResult = resetPeriodPoints(memberData);
+      if (resetResult.updated) {
+        memberData = resetResult.userData;
+        await kv.set(`user:${memberId}`, memberData);
+      }
+      
+      let periodPoints = 0;
+      
+      switch (period) {
+        case 'daily':
+          periodPoints = memberData.dayPoints || 0;
+          break;
+        case 'weekly':
+          periodPoints = memberData.weekPoints || 0;
+          break;
+        case 'monthly':
+          periodPoints = memberData.monthPoints || 0;
+          break;
+        case 'yearly':
+          periodPoints = memberData.yearPoints || 0;
+          break;
+      }
+      
+      leaderboardData.push({
+        userId: memberData.id,
+        username: memberData.username,
+        points: periodPoints
+      });
+    }
+    
+    // Sort by points descending
+    leaderboardData.sort((a, b) => b.points - a.points);
+    
+    // Add ranks
+    const rankedLeaderboard = leaderboardData.map((item, index) => ({
+      ...item,
+      rank: index + 1
+    }));
+    
+    return c.json({
+      period,
+      leaderboard: rankedLeaderboard
+    });
+  } catch (error) {
+    console.log('Error getting group leaderboard:', error);
+    return c.json({ error: 'Failed to get group leaderboard' }, 500);
+  }
+});
+
 Deno.serve(app.fetch);
