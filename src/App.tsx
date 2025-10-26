@@ -12,6 +12,7 @@ import { useTheme } from './hooks/useTheme';
 import { checkBackendHealth } from './utils/api';
 import { projectId } from './utils/supabase/info';
 import { ImageWithFallback } from './components/figma/ImageWithFallback';
+import hltLogo from 'figma:asset/6d8f4ca8453fef395dae5295369d777acb49f1cc.png';
 
 type Tab = 'home' | 'groups' | 'leaderboard' | 'profile' | 'superadmin';
 
@@ -136,11 +137,8 @@ export default function App() {
         <div className="max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-full flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-blue-500 via-green-500 to-yellow-500 shadow-lg">
-                <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20" />
-                <div className="relative z-10 flex items-center justify-center w-full h-full">
-                  <span className="text-2xl font-bold text-white">HLT</span>
-                </div>
+              <div className="w-14 h-14 rounded-lg flex items-center justify-center overflow-hidden">
+                <img src={hltLogo} alt="HLT Logo" className="w-full h-full object-cover" />
               </div>
               <div>
                 <h1 className="text-white">Help, Learn, Thank</h1>

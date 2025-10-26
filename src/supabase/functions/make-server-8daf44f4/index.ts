@@ -173,17 +173,17 @@ function resetPeriodPoints(userData: any) {
 }
 
 // Health check endpoint
-app.get("/make-server-8daf44f4/health", (c) => {
+app.get("/health", (c) => {
   return c.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 // Explicit OPTIONS handler for all routes (helps with CORS preflight)
-app.options("/make-server-8daf44f4/*", (c) => {
+app.options("/*", (c) => {
   return c.json({ ok: true });
 });
 
 // Sign up endpoint
-app.post("/make-server-8daf44f4/signup", async (c) => {
+app.post("/signup", async (c) => {
   try {
     const { username, password } = await c.req.json();
     
@@ -249,7 +249,7 @@ app.post("/make-server-8daf44f4/signup", async (c) => {
 });
 
 // Sign in endpoint
-app.post("/make-server-8daf44f4/signin", async (c) => {
+app.post("/signin", async (c) => {
   try {
     const { username, password, role } = await c.req.json();
     
@@ -308,7 +308,7 @@ app.post("/make-server-8daf44f4/signin", async (c) => {
 });
 
 // Get session endpoint
-app.get("/make-server-8daf44f4/session", async (c) => {
+app.get("/session", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     
@@ -339,7 +339,7 @@ app.get("/make-server-8daf44f4/session", async (c) => {
 });
 
 // Submit daily check-in
-app.post("/make-server-8daf44f4/checkin", async (c) => {
+app.post("/checkin", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -407,7 +407,7 @@ app.post("/make-server-8daf44f4/checkin", async (c) => {
 });
 
 // Get user profile and stats
-app.get("/make-server-8daf44f4/profile", async (c) => {
+app.get("/profile", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -452,7 +452,7 @@ app.get("/make-server-8daf44f4/profile", async (c) => {
 });
 
 // Get leaderboard
-app.get("/make-server-8daf44f4/leaderboard", async (c) => {
+app.get("/leaderboard", async (c) => {
   try {
     const period = c.req.query('period') || 'daily'; // daily, weekly, monthly, yearly
     
@@ -515,7 +515,7 @@ app.get("/make-server-8daf44f4/leaderboard", async (c) => {
 });
 
 // Check if user checked in today
-app.get("/make-server-8daf44f4/checkin-status", async (c) => {
+app.get("/checkin-status", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -538,7 +538,7 @@ app.get("/make-server-8daf44f4/checkin-status", async (c) => {
 });
 
 // Edit daily check-in
-app.put("/make-server-8daf44f4/checkin", async (c) => {
+app.put("/checkin", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -609,7 +609,7 @@ app.put("/make-server-8daf44f4/checkin", async (c) => {
 });
 
 // Create a group
-app.post("/make-server-8daf44f4/groups", async (c) => {
+app.post("/groups", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -650,7 +650,7 @@ app.post("/make-server-8daf44f4/groups", async (c) => {
 });
 
 // Get user's groups
-app.get("/make-server-8daf44f4/groups", async (c) => {
+app.get("/groups", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -677,7 +677,7 @@ app.get("/make-server-8daf44f4/groups", async (c) => {
 });
 
 // Get group details
-app.get("/make-server-8daf44f4/groups/:groupId", async (c) => {
+app.get("/groups/:groupId", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -723,7 +723,7 @@ app.get("/make-server-8daf44f4/groups/:groupId", async (c) => {
 });
 
 // Invite user to group
-app.post("/make-server-8daf44f4/groups/:groupId/invite", async (c) => {
+app.post("/groups/:groupId/invite", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -797,7 +797,7 @@ app.post("/make-server-8daf44f4/groups/:groupId/invite", async (c) => {
 });
 
 // Get user's pending invites
-app.get("/make-server-8daf44f4/invites", async (c) => {
+app.get("/invites", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -817,7 +817,7 @@ app.get("/make-server-8daf44f4/invites", async (c) => {
 });
 
 // Accept/reject invite
-app.post("/make-server-8daf44f4/invites/:inviteId/respond", async (c) => {
+app.post("/invites/:inviteId/respond", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -866,6 +866,86 @@ app.post("/make-server-8daf44f4/invites/:inviteId/respond", async (c) => {
   } catch (error) {
     console.log('Error responding to invite:', error);
     return c.json({ error: 'Failed to respond to invite' }, 500);
+  }
+});
+
+// Accept invite (separate endpoint)
+app.post("/invites/:inviteId/accept", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const user = await getCurrentUser(accessToken);
+    
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    const inviteId = c.req.param('inviteId');
+    
+    const invite = await kv.get(`user_invites:${user.id}:${inviteId}`);
+    if (!invite) {
+      return c.json({ error: 'Invite not found' }, 404);
+    }
+    
+    if (invite.status !== 'pending') {
+      return c.json({ error: 'Invite already responded to' }, 400);
+    }
+    
+    const group = await kv.get(`group:${invite.groupId}`);
+    if (!group) {
+      return c.json({ error: 'Group not found' }, 404);
+    }
+    
+    // Add user to group
+    group.members.push(user.id);
+    await kv.set(`group:${invite.groupId}`, group);
+    await kv.set(`user_groups:${user.id}:${invite.groupId}`, invite.groupId);
+    
+    invite.status = 'accepted';
+    await kv.set(`user_invites:${user.id}:${inviteId}`, invite);
+    await kv.set(`invite:${invite.groupId}:${user.id}`, invite);
+    
+    return c.json({
+      success: true,
+      invite
+    });
+  } catch (error) {
+    console.log('Error accepting invite:', error);
+    return c.json({ error: 'Failed to accept invite' }, 500);
+  }
+});
+
+// Decline invite (separate endpoint)
+app.post("/make-server-8daf44f4/invites/:inviteId/decline", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const user = await getCurrentUser(accessToken);
+    
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    const inviteId = c.req.param('inviteId');
+    
+    const invite = await kv.get(`user_invites:${user.id}:${inviteId}`);
+    if (!invite) {
+      return c.json({ error: 'Invite not found' }, 404);
+    }
+    
+    if (invite.status !== 'pending') {
+      return c.json({ error: 'Invite already responded to' }, 400);
+    }
+    
+    invite.status = 'rejected';
+    await kv.set(`user_invites:${user.id}:${inviteId}`, invite);
+    await kv.set(`invite:${invite.groupId}:${user.id}`, invite);
+    
+    return c.json({
+      success: true,
+      invite
+    });
+  } catch (error) {
+    console.log('Error declining invite:', error);
+    return c.json({ error: 'Failed to decline invite' }, 500);
   }
 });
 

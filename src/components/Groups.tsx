@@ -163,12 +163,13 @@ export function Groups({ accessToken, currentUserId }: GroupsProps) {
     }
   };
 
+  // Handle invite response - calls /accept or /decline endpoint
   const handleRespondToInvite = async (inviteId: string, action: 'accept' | 'reject') => {
     try {
-      await apiRequest(`/invites/${inviteId}/respond`, {
+      const endpoint = action === 'accept' ? 'accept' : 'decline';
+      await apiRequest(`/invites/${inviteId}/${endpoint}`, {
         method: 'POST',
-        accessToken,
-        body: { action }
+        accessToken
       });
 
       toast.success(action === 'accept' ? 'Joined group!' : 'Invite declined');
@@ -252,7 +253,7 @@ export function Groups({ accessToken, currentUserId }: GroupsProps) {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-white">
-                      <span className="text-blue-400">{invite.invitedByUsername}</span> invited you to join
+                      <span className="text-blue-400">{invite.inviterUsername}</span> invited you to join
                     </p>
                     <p className="text-xl text-white mt-1">{invite.groupName}</p>
                   </div>
