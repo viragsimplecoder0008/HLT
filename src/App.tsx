@@ -28,8 +28,29 @@ export default function App() {
     const storedUser = localStorage.getItem('hlt_user');
     
     if (storedToken && storedUser) {
-      setAccessToken(storedToken);
-      setUser(JSON.parse(storedUser));
+      // Verify the session is still valid
+      fetch(`https://${projectId}.supabase.co/functions/v1/make-server-8daf44f4/session`, {
+        headers: {
+          'Authorization': `Bearer ${storedToken}`
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          // Session is valid
+          setAccessToken(storedToken);
+          setUser(data.user);
+        } else {
+          // Session expired, clear storage
+          localStorage.removeItem('hlt_access_token');
+          localStorage.removeItem('hlt_user');
+        }
+      })
+      .catch(() => {
+        // Network error or session invalid
+        localStorage.removeItem('hlt_access_token');
+        localStorage.removeItem('hlt_user');
+      });
     }
 
     // Check backend health
