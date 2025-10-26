@@ -27,6 +27,11 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
   // Sign in state
   const [signinUsername, setSigninUsername] = useState('');
   const [signinPassword, setSigninPassword] = useState('');
+  
+  // Role selection state
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
+  const [availableRoles, setAvailableRoles] = useState<string[]>([]);
+  const [pendingAuthData, setPendingAuthData] = useState<any>(null);
 
   useEffect(() => {
     // Track mouse position for cursor-following gradient
@@ -126,13 +131,13 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
     }
   };
 
-  const handleSignin = async (e: React.FormEvent) => {
+  const handleSignin = async (e: React.FormEvent, selectedRole?: string) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      console.log('Attempting signin...', { username: signinUsername });
+      console.log('Attempting signin...', { username: signinUsername, role: selectedRole });
       
       const signinUrl = `https://${projectId}.supabase.co/functions/v1/make-server-8daf44f4/signin`;
       console.log('Signin URL:', signinUrl);
@@ -145,7 +150,8 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
         },
         body: JSON.stringify({
           username: signinUsername,
-          password: signinPassword
+          password: signinPassword,
+          role: selectedRole
         })
       });
 
@@ -165,9 +171,19 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       }
 
       const data = await response.json();
-      console.log('Signin successful');
+      console.log('Signin successful', data);
 
-      onAuthSuccess(data.accessToken, data.user);
+      // Check if role selection is needed
+      if (data.needsRoleSelection && !selectedRole) {
+        console.log('Role selection needed', data.availableRoles);
+        setShowRoleSelection(true);
+        setAvailableRoles(data.availableRoles);
+        setPendingAuthData(data);
+        setIsLoading(false);
+        return;
+      }
+
+      onAuthSuccess(data.accessToken, { ...data.user, selectedRole: data.selectedRole || 'user' });
     } catch (err) {
       console.error('Signin error:', err);
       if (err instanceof TypeError && err.message.includes('fetch')) {
@@ -179,6 +195,63 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       setIsLoading(false);
     }
   };
+
+  const handleRoleSelection = (role: string) => {
+    setShowRoleSelection(false);
+    onAuthSuccess(pendingAuthData.accessToken, { ...pendingAuthData.user, selectedRole: role });
+  };
+
+  // Role selection screen
+  if (showRoleSelection) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4">
+        <Card className="w-full max-w-md glass-card border-0 shadow-2xl">
+          <CardHeader className="text-center">
+            <CardTitle className="text-white text-2xl">Select Your Role</CardTitle>
+            <CardDescription className="text-gray-400">
+              Choose how you want to sign in
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {availableRoles.map((role) => (
+              <Button
+                key={role}
+                onClick={() => handleRoleSelection(role)}
+                className={`w-full h-20 ${
+                  role === 'superadmin' 
+                    ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700' 
+                    : 'glass-button'
+                }`}
+              >
+                <div className="flex items-center justify-center gap-3">
+                  {role === 'superadmin' && (
+                    <div className="w-10 h-10 rounded-full bg-yellow-400/20 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-yellow-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </div>
+                  )}
+                  {role === 'user' && (
+                    <div className="w-10 h-10 rounded-full bg-blue-400/20 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-blue-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                  )}
+                  <div className="text-left">
+                    <p className="text-lg capitalize">{role}</p>
+                    <p className="text-sm text-gray-300">
+                      {role === 'superadmin' ? 'Full system access' : 'Regular user access'}
+                    </p>
+                  </div>
+                </div>
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 transition-colors relative overflow-hidden">

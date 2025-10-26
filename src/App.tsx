@@ -3,15 +3,17 @@ import { AuthScreen } from './components/AuthScreen';
 import { DailyCheckIn } from './components/DailyCheckIn';
 import { Leaderboard } from './components/Leaderboard';
 import { Profile } from './components/Profile';
+import { Groups } from './components/Groups';
+import { SuperAdmin } from './components/SuperAdmin';
 import { Toaster } from './components/ui/sonner';
-import { Home, Trophy, User, AlertCircle } from 'lucide-react';
+import { Home, Trophy, User, Users, Shield, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTheme } from './hooks/useTheme';
 import { checkBackendHealth } from './utils/api';
 import { projectId } from './utils/supabase/info';
 import logoImage from 'figma:asset/6d8f4ca8453fef395dae5295369d777acb49f1cc.png';
 
-type Tab = 'home' | 'leaderboard' | 'profile';
+type Tab = 'home' | 'groups' | 'leaderboard' | 'profile' | 'superadmin';
 
 export default function App() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -171,6 +173,21 @@ export default function App() {
           </motion.div>
         )}
 
+        {activeTab === 'groups' && (
+          <motion.div
+            key="groups"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+          >
+            <div className="mb-6">
+              <h2 className="text-2xl mb-2 text-white">Groups 👥</h2>
+              <p className="text-gray-400">Collaborate and compete with friends</p>
+            </div>
+            <Groups accessToken={accessToken} currentUserId={user.id} />
+          </motion.div>
+        )}
+
         {activeTab === 'leaderboard' && (
           <motion.div
             key="leaderboard"
@@ -204,12 +221,30 @@ export default function App() {
             />
           </motion.div>
         )}
+
+        {activeTab === 'superadmin' && user?.selectedRole === 'superadmin' && (
+          <motion.div
+            key="superadmin"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+          >
+            <div className="mb-6">
+              <h2 className="text-2xl mb-2 text-white flex items-center gap-2">
+                <Shield className="w-7 h-7 text-yellow-400" />
+                SuperAdmin Dashboard
+              </h2>
+              <p className="text-gray-400">Complete system oversight and management</p>
+            </div>
+            <SuperAdmin accessToken={accessToken} />
+          </motion.div>
+        )}
       </main>
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 glass-panel border-t-0 shadow-2xl">
         <div className="max-w-2xl mx-auto px-4">
-          <div className="grid grid-cols-3 gap-2 py-2">
+          <div className={`grid ${user?.selectedRole === 'superadmin' ? 'grid-cols-5' : 'grid-cols-4'} gap-2 py-2`}>
             <button
               onClick={() => setActiveTab('home')}
               className={`flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all duration-300 ${
@@ -220,6 +255,18 @@ export default function App() {
             >
               <Home className="w-6 h-6" />
               <span className="text-xs">Home</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('groups')}
+              className={`flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all duration-300 ${
+                activeTab === 'groups'
+                  ? 'glass-button text-blue-400 scale-105 shadow-lg'
+                  : 'text-gray-400 hover:text-gray-200 hover:glass-badge'
+              }`}
+            >
+              <Users className="w-6 h-6" />
+              <span className="text-xs">Groups</span>
             </button>
 
             <button
@@ -245,6 +292,20 @@ export default function App() {
               <User className="w-6 h-6" />
               <span className="text-xs">Profile</span>
             </button>
+
+            {user?.selectedRole === 'superadmin' && (
+              <button
+                onClick={() => setActiveTab('superadmin')}
+                className={`flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all duration-300 ${
+                  activeTab === 'superadmin'
+                    ? 'glass-button text-yellow-400 scale-105 shadow-lg'
+                    : 'text-gray-400 hover:text-gray-200 hover:glass-badge'
+                }`}
+              >
+                <Shield className="w-6 h-6" />
+                <span className="text-xs">Admin</span>
+              </button>
+            )}
           </div>
         </div>
       </nav>
