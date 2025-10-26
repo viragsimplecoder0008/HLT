@@ -4,21 +4,21 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Moon, Sun } from 'lucide-react';
-import type { Theme } from '../hooks/useTheme';
+import { Alert, AlertDescription } from './ui/alert';
+import { AlertCircle } from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { checkBackendHealth } from '../utils/api';
 import logoImage from 'figma:asset/6d8f4ca8453fef395dae5295369d777acb49f1cc.png';
 
 interface AuthScreenProps {
   onAuthSuccess: (accessToken: string, user: any) => void;
-  theme: Theme;
-  toggleTheme: () => void;
 }
 
-export function AuthScreen({ onAuthSuccess, theme, toggleTheme }: AuthScreenProps) {
+export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [backendHealthy, setBackendHealthy] = useState<boolean | null>(null);
   
   // Sign up state
   const [signupUsername, setSignupUsername] = useState('');
@@ -35,6 +35,10 @@ export function AuthScreen({ onAuthSuccess, theme, toggleTheme }: AuthScreenProp
     };
 
     window.addEventListener('mousemove', handleMouseMove);
+    
+    // Check backend health
+    checkBackendHealth().then(setBackendHealthy);
+    
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
@@ -112,7 +116,11 @@ export function AuthScreen({ onAuthSuccess, theme, toggleTheme }: AuthScreenProp
       onAuthSuccess(signinData.accessToken, signinData.user);
     } catch (err) {
       console.error('Signup error:', err);
-      setError(`Connection error: ${err instanceof Error ? err.message : 'Unable to connect to server. Please check if the backend is deployed.'}`);
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        setError('⚠️ Backend not deployed. Please deploy the Edge Function first. See deployment instructions above.');
+      } else {
+        setError(`Connection error: ${err instanceof Error ? err.message : 'Unable to connect to server'}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -162,14 +170,18 @@ export function AuthScreen({ onAuthSuccess, theme, toggleTheme }: AuthScreenProp
       onAuthSuccess(data.accessToken, data.user);
     } catch (err) {
       console.error('Signin error:', err);
-      setError(`Connection error: ${err instanceof Error ? err.message : 'Unable to connect to server. Please check if the backend is deployed.'}`);
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        setError('⚠️ Backend not deployed. Please deploy the Edge Function first. See deployment instructions above.');
+      } else {
+        setError(`Connection error: ${err instanceof Error ? err.message : 'Unable to connect to server'}`);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-green-50 to-yellow-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4 transition-colors relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 transition-colors relative overflow-hidden">
       {/* Animated decorative glass orbs creating depth */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-blue-400/25 to-cyan-500/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
       <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-br from-green-400/25 to-emerald-500/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
@@ -181,19 +193,6 @@ export function AuthScreen({ onAuthSuccess, theme, toggleTheme }: AuthScreenProp
           top: `${mousePosition.y}px`
         }} 
       />
-      
-      {/* Theme Toggle */}
-      <button
-        onClick={toggleTheme}
-        className="absolute top-6 right-6 p-3 glass-button rounded-full hover:scale-110 transition-all z-10 shadow-lg"
-        aria-label="Toggle theme"
-      >
-        {theme === 'dark' ? (
-          <Sun className="w-6 h-6 text-yellow-400" />
-        ) : (
-          <Moon className="w-6 h-6 text-slate-700 dark:text-slate-300" />
-        )}
-      </button>
 
       <Card className="w-full max-w-md glass-card border-0 shadow-2xl relative z-10">
         <CardHeader className="text-center space-y-3 pb-6">
@@ -204,12 +203,27 @@ export function AuthScreen({ onAuthSuccess, theme, toggleTheme }: AuthScreenProp
               className="w-full h-full object-cover rounded-full"
             />
           </div>
-          <CardTitle className="dark:text-white">Help, Learn, Thank</CardTitle>
-          <CardDescription className="dark:text-gray-300">
+          <CardTitle className="text-white">Help, Learn, Thank</CardTitle>
+          <CardDescription className="text-gray-300">
             Build positive daily habits
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Backend warning */}
+          {backendHealthy === false && (
+            <Alert className="mb-4 bg-amber-500/20 border-amber-500/50 text-amber-200">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                <strong>Backend Not Deployed</strong><br/>
+                Run these commands to deploy:
+                <code className="block mt-2 text-xs bg-black/30 p-2 rounded font-mono">
+                  supabase link --project-ref {projectId}<br/>
+                  supabase functions deploy make-server-8daf44f4
+                </code>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
@@ -241,10 +255,10 @@ export function AuthScreen({ onAuthSuccess, theme, toggleTheme }: AuthScreenProp
                   />
                 </div>
                 {error && (
-                  <div className="glass-card border-red-200 dark:border-red-900 p-3 space-y-1">
-                    <div className="text-red-600 dark:text-red-400 text-sm">{error}</div>
+                  <div className="glass-card border-red-900 p-3 space-y-1">
+                    <div className="text-red-400 text-sm">{error}</div>
                     {error.includes('connect') && (
-                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                      <div className="text-xs text-gray-400">
                         The backend server may not be deployed. Please check your Supabase Edge Functions.
                       </div>
                     )}
@@ -281,10 +295,10 @@ export function AuthScreen({ onAuthSuccess, theme, toggleTheme }: AuthScreenProp
                   />
                 </div>
                 {error && (
-                  <div className="glass-card border-red-200 dark:border-red-900 p-3 space-y-1">
-                    <div className="text-red-600 dark:text-red-400 text-sm">{error}</div>
+                  <div className="glass-card border-red-900 p-3 space-y-1">
+                    <div className="text-red-400 text-sm">{error}</div>
                     {error.includes('connect') && (
-                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                      <div className="text-xs text-gray-400">
                         The backend server may not be deployed. Please check your Supabase Edge Functions.
                       </div>
                     )}

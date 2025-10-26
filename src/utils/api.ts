@@ -9,6 +9,34 @@ interface FetchOptions {
   accessToken?: string;
 }
 
+let backendAvailable: boolean | null = null;
+
+// Check if the backend is deployed and available
+export async function checkBackendHealth(): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    const response = await fetch(`${API_BASE_URL}/health`, {
+      signal: controller.signal,
+      headers: {
+        'Authorization': `Bearer ${publicAnonKey}`
+      }
+    });
+    
+    clearTimeout(timeoutId);
+    backendAvailable = response.ok;
+    return response.ok;
+  } catch (error) {
+    backendAvailable = false;
+    return false;
+  }
+}
+
+export function isBackendAvailable(): boolean | null {
+  return backendAvailable;
+}
+
 export async function apiRequest(endpoint: string, options: FetchOptions = {}) {
   const { method = 'GET', body, accessToken } = options;
   
@@ -29,12 +57,17 @@ export async function apiRequest(endpoint: string, options: FetchOptions = {}) {
   console.log(`API Request: ${method} ${url}`);
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const response = await fetch(url, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
     console.log(`API Response: ${response.status} ${response.statusText}`);
 
     // Handle non-JSON responses
@@ -53,6 +86,10 @@ export async function apiRequest(endpoint: string, options: FetchOptions = {}) {
 
     return data;
   } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('API request timeout');
+      throw new Error('Request timeout - backend might not be deployed');
+    }
     console.error('API request failed:', error);
     throw error;
   }

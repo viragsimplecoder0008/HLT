@@ -5,8 +5,9 @@
 The app requires a Supabase Edge Function to be deployed. Follow these steps:
 
 ### Prerequisites
-- Supabase CLI installed
-- Supabase project created (project ID: `fitjjtmovmhgsuqcxbwl`)
+- Supabase CLI installed ([Installation Guide](https://supabase.com/docs/guides/cli/getting-started))
+- Supabase project created (project ID: `hbabranmwzppeuyzczvlv`)
+- You must be added as a member/owner to the Supabase project
 
 ### Deploy the Edge Function
 
@@ -17,7 +18,7 @@ The app requires a Supabase Edge Function to be deployed. Follow these steps:
 
 2. **Link your project:**
    ```bash
-   supabase link --project-ref fitjjtmovmhgsuqcxbwl
+   supabase link --project-ref hbabranmwzppeuyzczvlv
    ```
 
 3. **Deploy the server function:**
@@ -27,7 +28,7 @@ The app requires a Supabase Edge Function to be deployed. Follow these steps:
 
 4. **Verify deployment:**
    ```bash
-   curl https://fitjjtmovmhgsuqcxbwl.supabase.co/functions/v1/make-server-8daf44f4/health
+   curl https://hbabranmwzppeuyzczvlv.supabase.co/functions/v1/make-server-8daf44f4/health
    ```
    
    You should see: `{"status":"ok","timestamp":"..."}`
@@ -90,6 +91,15 @@ The app uses Supabase's built-in KV store table (`kv_store_8daf44f4`) which is a
 ### "Unauthorized" Error
 - Access token expired or invalid
 - Solution: Sign out and sign in again
+
+### "Your account does not have the necessary privileges" Error
+- Your account is not a member of the Supabase project
+- Solution: The project owner needs to invite you to the project via Supabase Dashboard → Settings → Team
+- Alternative: If you own the project, make sure you're logged in with the correct account
+
+### Invalid Project Ref Format Error
+- Make sure you're using the correct project ID: `hbabranmwzppeuyzczvlv`
+- Check that there are no typos in the project reference
 
 ## Support
 

@@ -6,7 +6,7 @@ import { Checkbox } from './ui/checkbox';
 import { Card, CardContent } from './ui/card';
 import { toast } from 'sonner@2.0.3';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Heart, BookOpen, ThumbsUp } from 'lucide-react';
+import { Sparkles, Heart, BookOpen, ThumbsUp, Edit2 } from 'lucide-react';
 import { projectId } from '../utils/supabase/info';
 
 interface DailyCheckInProps {
@@ -19,6 +19,7 @@ export function DailyCheckIn({ accessToken, onCheckInComplete }: DailyCheckInPro
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
   const [todaysCheckin, setTodaysCheckin] = useState<any>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   
   // Form state
   const [helpText, setHelpText] = useState('');
@@ -35,14 +36,25 @@ export function DailyCheckIn({ accessToken, onCheckInComplete }: DailyCheckInPro
 
   const checkCheckinStatus = async () => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-8daf44f4/checkin-status`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`
-          }
+          },
+          signal: controller.signal
         }
       );
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        // Silently handle errors - user can still submit
+        return;
+      }
 
       const data = await response.json();
       if (data.hasCheckedIn) {
@@ -50,7 +62,8 @@ export function DailyCheckIn({ accessToken, onCheckInComplete }: DailyCheckInPro
         setTodaysCheckin(data.checkin);
       }
     } catch (err) {
-      console.error('Error checking status:', err);
+      // Silently handle network errors - backend might not be deployed yet
+      // User will get a proper error message when they try to submit
     }
   };
 
@@ -59,10 +72,14 @@ export function DailyCheckIn({ accessToken, onCheckInComplete }: DailyCheckInPro
     setIsLoading(true);
 
     try {
+      const method = isEditing ? 'PUT' : 'POST';
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-8daf44f4/checkin`,
         {
-          method: 'POST',
+          method,
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`
@@ -71,35 +88,76 @@ export function DailyCheckIn({ accessToken, onCheckInComplete }: DailyCheckInPro
             help: noHelp ? null : helpText,
             learn: noLearn ? null : learnText,
             thank: noThank ? null : thankText
-          })
+          }),
+          signal: controller.signal
         }
       );
 
+      clearTimeout(timeoutId);
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.error || 'Failed to submit check-in');
+        toast.error(data.error || `Failed to ${isEditing ? 'update' : 'submit'} check-in`);
         setIsLoading(false);
         return;
       }
 
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 3000);
+      if (!isEditing) {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+      }
       
-      toast.success(`Great job! You earned ${data.points} point${data.points !== 1 ? 's' : ''} today! 🎉`);
+      toast.success(isEditing 
+        ? `Updated! You now have ${data.points} point${data.points !== 1 ? 's' : ''} today! ✨` 
+        : `Great job! You earned ${data.points} point${data.points !== 1 ? 's' : ''} today! 🎉`
+      );
       
       setHasCheckedIn(true);
       setTodaysCheckin(data.checkin);
+      setIsEditing(false);
       onCheckInComplete();
     } catch (err) {
       console.error('Error submitting check-in:', err);
-      toast.error('An error occurred');
+      if (err instanceof Error && err.name === 'AbortError') {
+        toast.error('⚠️ Backend not responding. Please deploy the Edge Function first.', {
+          duration: 6000,
+          description: 'Run: supabase functions deploy make-server-8daf44f4'
+        });
+      } else if (err instanceof TypeError && err.message.includes('fetch')) {
+        toast.error('⚠️ Backend not deployed. Please deploy the Edge Function.', {
+          duration: 6000,
+          description: 'Run: supabase link --project-ref ' + projectId + ' && supabase functions deploy make-server-8daf44f4'
+        });
+      } else {
+        toast.error('An error occurred while submitting');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (hasCheckedIn && todaysCheckin) {
+  const handleEdit = () => {
+    setIsEditing(true);
+    // Pre-fill the form with existing data
+    setHelpText(todaysCheckin.help || '');
+    setLearnText(todaysCheckin.learn || '');
+    setThankText(todaysCheckin.thank || '');
+    setNoHelp(!todaysCheckin.help);
+    setNoLearn(!todaysCheckin.learn);
+    setNoThank(!todaysCheckin.thank);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setHelpText('');
+    setLearnText('');
+    setThankText('');
+    setNoHelp(false);
+    setNoLearn(false);
+    setNoThank(false);
+  };
+
+  if (hasCheckedIn && todaysCheckin && !isEditing) {
     return (
       <div className="space-y-6">
         <motion.div 
@@ -169,6 +227,15 @@ export function DailyCheckIn({ accessToken, onCheckInComplete }: DailyCheckInPro
             )}
           </CardContent>
         </Card>
+
+        <Button 
+          onClick={handleEdit}
+          variant="outline"
+          className="w-full glass-card border-0 shadow-lg hover:shadow-xl transition-all"
+        >
+          <Edit2 className="w-4 h-4 mr-2" />
+          Edit Today's Entry
+        </Button>
 
         <p className="text-center text-gray-500 dark:text-gray-400 text-sm">Come back tomorrow to continue your journey!</p>
       </div>
@@ -348,14 +415,29 @@ export function DailyCheckIn({ accessToken, onCheckInComplete }: DailyCheckInPro
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4 }}
+          className="flex gap-3"
         >
           <Button 
             type="submit" 
-            className="w-full h-12 shadow-xl hover:scale-[1.02] transition-all"
+            className="flex-1 h-12 shadow-xl hover:scale-[1.02] transition-all"
             disabled={isLoading}
           >
-            {isLoading ? 'Submitting...' : 'Submit Check-In'}
+            {isLoading 
+              ? (isEditing ? 'Updating...' : 'Submitting...') 
+              : (isEditing ? 'Update Check-In' : 'Submit Check-In')
+            }
           </Button>
+          {isEditing && (
+            <Button 
+              type="button"
+              variant="outline"
+              className="h-12 glass-card border-0 shadow-lg"
+              onClick={handleCancelEdit}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+          )}
         </motion.div>
       </form>
     </div>
