@@ -915,7 +915,7 @@ app.post("/invites/:inviteId/accept", async (c) => {
 });
 
 // Decline invite (separate endpoint)
-app.post("/make-server-8daf44f4/invites/:inviteId/decline", async (c) => {
+app.post("/invites/:inviteId/decline", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -950,7 +950,7 @@ app.post("/make-server-8daf44f4/invites/:inviteId/decline", async (c) => {
 });
 
 // Remove member from group (admin only)
-app.delete("/make-server-8daf44f4/groups/:groupId/members/:userId", async (c) => {
+app.delete("/groups/:groupId/members/:userId", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -992,7 +992,7 @@ app.delete("/make-server-8daf44f4/groups/:groupId/members/:userId", async (c) =>
 });
 
 // Ban user from group (admin only)
-app.post("/make-server-8daf44f4/groups/:groupId/ban/:userId", async (c) => {
+app.post("/groups/:groupId/ban/:userId", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -1038,7 +1038,7 @@ app.post("/make-server-8daf44f4/groups/:groupId/ban/:userId", async (c) => {
 });
 
 // Unban user from group (admin only)
-app.post("/make-server-8daf44f4/groups/:groupId/unban/:userId", async (c) => {
+app.post("/groups/:groupId/unban/:userId", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -1071,7 +1071,7 @@ app.post("/make-server-8daf44f4/groups/:groupId/unban/:userId", async (c) => {
 });
 
 // Update group metadata (admin only)
-app.put("/make-server-8daf44f4/groups/:groupId", async (c) => {
+app.put("/groups/:groupId", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -1109,7 +1109,7 @@ app.put("/make-server-8daf44f4/groups/:groupId", async (c) => {
 });
 
 // Get group leaderboard
-app.get("/make-server-8daf44f4/groups/:groupId/leaderboard", async (c) => {
+app.get("/groups/:groupId/leaderboard", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -1194,7 +1194,7 @@ async function isSuperAdmin(userId: string): Promise<boolean> {
 // ========== SUPERADMIN ENDPOINTS ==========
 
 // Get unified leaderboard (SuperAdmin only)
-app.get("/make-server-8daf44f4/superadmin/unified-leaderboard", async (c) => {
+app.get("/superadmin/unified-leaderboard", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -1268,7 +1268,7 @@ app.get("/make-server-8daf44f4/superadmin/unified-leaderboard", async (c) => {
 });
 
 // Get all users (SuperAdmin only)
-app.get("/make-server-8daf44f4/superadmin/users", async (c) => {
+app.get("/superadmin/users", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -1300,7 +1300,7 @@ app.get("/make-server-8daf44f4/superadmin/users", async (c) => {
 });
 
 // Get all groups (SuperAdmin only)
-app.get("/make-server-8daf44f4/superadmin/groups", async (c) => {
+app.get("/superadmin/groups", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -1332,7 +1332,7 @@ app.get("/make-server-8daf44f4/superadmin/groups", async (c) => {
 });
 
 // Delete user (SuperAdmin only)
-app.delete("/make-server-8daf44f4/superadmin/users/:userId", async (c) => {
+app.delete("/superadmin/users/:userId", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -1389,7 +1389,7 @@ app.delete("/make-server-8daf44f4/superadmin/users/:userId", async (c) => {
 });
 
 // Delete group (SuperAdmin only)
-app.delete("/make-server-8daf44f4/superadmin/groups/:groupId", async (c) => {
+app.delete("/superadmin/groups/:groupId", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -1434,7 +1434,7 @@ app.delete("/make-server-8daf44f4/superadmin/groups/:groupId", async (c) => {
 });
 
 // Update user (SuperAdmin only)
-app.put("/make-server-8daf44f4/superadmin/users/:userId", async (c) => {
+app.put("/superadmin/users/:userId", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);
@@ -1481,7 +1481,7 @@ app.put("/make-server-8daf44f4/superadmin/users/:userId", async (c) => {
 });
 
 // Get all check-ins (SuperAdmin only)
-app.get("/make-server-8daf44f4/superadmin/checkins", async (c) => {
+app.get("/superadmin/checkins", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const user = await getCurrentUser(accessToken);

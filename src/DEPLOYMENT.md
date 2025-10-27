@@ -1,5 +1,9 @@
 # HLT App - Deployment Guide
 
+## 🚀 IMPORTANT: Latest Update (Route Fixes)
+
+**All backend routes have been fixed to remove duplicate path prefixes.** If you previously deployed the backend and experienced 404 errors on Groups or other endpoints, you MUST redeploy using the command below.
+
 ## Backend Deployment (Supabase Edge Functions)
 
 The app requires a Supabase Edge Function to be deployed. Follow these steps:
@@ -23,7 +27,7 @@ The app requires a Supabase Edge Function to be deployed. Follow these steps:
 
 3. **Deploy the server function:**
    ```bash
-   supabase functions deploy make-server-8daf44f4
+   supabase functions deploy make-server-8daf44f4 --project-ref hbabranmwzppeuyzczvlv
    ```
 
 4. **Verify deployment:**
@@ -32,6 +36,14 @@ The app requires a Supabase Edge Function to be deployed. Follow these steps:
    ```
    
    You should see: `{"status":"ok","timestamp":"..."}`
+
+5. **Test Groups endpoints (critical):**
+   ```bash
+   # This should return an authentication error (401), NOT a 404
+   curl https://hbabranmwzppeuyzczvlv.supabase.co/functions/v1/make-server-8daf44f4/groups
+   ```
+   
+   If you get a 404, the deployment didn't work. Try again or check the logs.
 
 ### Environment Variables
 
