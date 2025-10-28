@@ -546,6 +546,10 @@
     right: calc(var(--spacing) * 0);
   }
 
+  .right-2 {
+    right: calc(var(--spacing) * 2);
+  }
+
   .right-4 {
     right: calc(var(--spacing) * 4);
   }
@@ -957,6 +961,10 @@
 
   .animate-pulse {
     animation: var(--animate-pulse);
+  }
+
+  .cursor-not-allowed {
+    cursor: not-allowed;
   }
 
   .cursor-pointer {
@@ -1824,6 +1832,10 @@
     padding-top: calc(var(--spacing) * 6);
   }
 
+  .pr-12 {
+    padding-right: calc(var(--spacing) * 12);
+  }
+
   .pb-2 {
     padding-bottom: calc(var(--spacing) * 2);
   }
@@ -2068,6 +2080,10 @@
 
   .underline-offset-4 {
     text-underline-offset: 4px;
+  }
+
+  .opacity-50 {
+    opacity: .5;
   }
 
   .opacity-70 {
@@ -2337,6 +2353,12 @@
   @media (hover: hover) {
     .hover\:text-gray-200:hover {
       color: var(--color-gray-200);
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:text-gray-600:hover {
+      color: var(--color-gray-600);
     }
   }
 
@@ -2640,6 +2662,12 @@
       .dark\:hover\:bg-slate-700\/90:is(.dark *):hover {
         background-color: color-mix(in oklab, var(--color-slate-700) 90%, transparent);
       }
+    }
+  }
+
+  @media (hover: hover) {
+    .dark\:hover\:text-gray-300:is(.dark *):hover {
+      color: var(--color-gray-300);
     }
   }
 

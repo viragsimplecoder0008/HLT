@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -6,7 +6,7 @@ import { Checkbox } from './ui/checkbox';
 import { Card, CardContent } from './ui/card';
 import { toast } from 'sonner@2.0.3';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Heart, BookOpen, ThumbsUp, Edit2 } from 'lucide-react';
+import { Sparkles, Heart, BookOpen, ThumbsUp, Edit2, Mic } from 'lucide-react';
 import { projectId } from '../utils/supabase/info';
 
 interface DailyCheckInProps {
@@ -29,6 +29,10 @@ export function DailyCheckIn({ accessToken, onCheckInComplete }: DailyCheckInPro
   const [noHelp, setNoHelp] = useState(false);
   const [noLearn, setNoLearn] = useState(false);
   const [noThank, setNoThank] = useState(false);
+
+  // Voice input state
+  const [isListening, setIsListening] = useState<'help' | 'learn' | 'thank' | null>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     checkCheckinStatus();
@@ -155,6 +159,116 @@ export function DailyCheckIn({ accessToken, onCheckInComplete }: DailyCheckInPro
     setNoHelp(false);
     setNoLearn(false);
     setNoThank(false);
+  };
+
+  // Voice input handler
+  const handleVoiceInput = (field: 'help' | 'learn' | 'thank') => {
+    // If already listening to this field, stop
+    if (isListening === field) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(null);
+      return;
+    }
+
+    // Check browser support
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error('Voice input not supported', {
+        description: 'Please use Chrome, Edge, or Safari'
+      });
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsListening(field);
+        toast.info('🎙️ Listening... Speak now!');
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript.toLowerCase().trim();
+        
+        // Negative response patterns
+        const negativePatterns = [
+          /^no$/,
+          /^nope$/,
+          /^nah$/,
+          /^not today$/,
+          /^no i did not$/,
+          /^no i didn't$/,
+          /^i did not$/,
+          /^i didn't$/,
+          /^nothing$/,
+          /^nobody$/,
+          /^no one$/,
+        ];
+
+        const isNegative = negativePatterns.some(pattern => pattern.test(transcript));
+
+        if (isNegative) {
+          // Auto-check the "No, not today" checkbox
+          if (field === 'help') {
+            setNoHelp(true);
+            setHelpText('');
+          } else if (field === 'learn') {
+            setNoLearn(true);
+            setLearnText('');
+          } else if (field === 'thank') {
+            setNoThank(true);
+            setThankText('');
+          }
+          toast.success('✅ Got it! Marked as "No, not today"');
+        } else {
+          // Fill the text field with the transcript
+          if (field === 'help') {
+            setHelpText(event.results[0][0].transcript);
+            setNoHelp(false);
+          } else if (field === 'learn') {
+            setLearnText(event.results[0][0].transcript);
+            setNoLearn(false);
+          } else if (field === 'thank') {
+            setThankText(event.results[0][0].transcript);
+            setNoThank(false);
+          }
+          toast.success('✅ Voice input captured!');
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        setIsListening(null);
+        if (event.error === 'no-speech') {
+          toast.error('No speech detected', {
+            description: 'Please try again and speak clearly'
+          });
+        } else if (event.error === 'not-allowed') {
+          toast.error('Microphone access denied', {
+            description: 'Please allow microphone access in your browser'
+          });
+        } else {
+          toast.error('Voice input error', {
+            description: `Error: ${event.error}`
+          });
+        }
+      };
+
+      recognition.onend = () => {
+        setIsListening(null);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (error) {
+      console.error('Voice input error:', error);
+      toast.error('Failed to start voice input');
+      setIsListening(null);
+    }
   };
 
   if (hasCheckedIn && todaysCheckin && !isEditing) {
@@ -299,13 +413,29 @@ export function DailyCheckIn({ accessToken, onCheckInComplete }: DailyCheckInPro
                   <Label htmlFor="help" className="dark:text-white">
                     Did you help somebody?
                   </Label>
-                  <Input
-                    id="help"
-                    placeholder="Tell us how you helped someone today..."
-                    value={helpText}
-                    onChange={(e) => setHelpText(e.target.value)}
-                    disabled={noHelp || isLoading}
-                  />
+                  <div className="relative flex items-center gap-2">
+                    <Input
+                      id="help"
+                      placeholder="Tell us how you helped someone today..."
+                      value={helpText}
+                      onChange={(e) => setHelpText(e.target.value)}
+                      disabled={noHelp || isLoading}
+                      className="pr-12"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleVoiceInput('help')}
+                      disabled={noHelp || isLoading}
+                      className={`absolute right-2 p-2 rounded-lg transition-all ${
+                        isListening === 'help'
+                          ? 'text-red-500 animate-pulse'
+                          : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                      } ${noHelp || isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      title="Voice input"
+                    >
+                      <Mic className="w-5 h-5" />
+                    </button>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id="no-help"
@@ -342,13 +472,29 @@ export function DailyCheckIn({ accessToken, onCheckInComplete }: DailyCheckInPro
                   <Label htmlFor="learn" className="dark:text-white">
                     Did you learn something?
                   </Label>
-                  <Input
-                    id="learn"
-                    placeholder="Share what you learned today..."
-                    value={learnText}
-                    onChange={(e) => setLearnText(e.target.value)}
-                    disabled={noLearn || isLoading}
-                  />
+                  <div className="relative flex items-center gap-2">
+                    <Input
+                      id="learn"
+                      placeholder="Share what you learned today..."
+                      value={learnText}
+                      onChange={(e) => setLearnText(e.target.value)}
+                      disabled={noLearn || isLoading}
+                      className="pr-12"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleVoiceInput('learn')}
+                      disabled={noLearn || isLoading}
+                      className={`absolute right-2 p-2 rounded-lg transition-all ${
+                        isListening === 'learn'
+                          ? 'text-red-500 animate-pulse'
+                          : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                      } ${noLearn || isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      title="Voice input"
+                    >
+                      <Mic className="w-5 h-5" />
+                    </button>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id="no-learn"
@@ -385,13 +531,29 @@ export function DailyCheckIn({ accessToken, onCheckInComplete }: DailyCheckInPro
                   <Label htmlFor="thank" className="dark:text-white">
                     Did you thank somebody?
                   </Label>
-                  <Input
-                    id="thank"
-                    placeholder="Tell us who you thanked..."
-                    value={thankText}
-                    onChange={(e) => setThankText(e.target.value)}
-                    disabled={noThank || isLoading}
-                  />
+                  <div className="relative flex items-center gap-2">
+                    <Input
+                      id="thank"
+                      placeholder="Tell us who you thanked..."
+                      value={thankText}
+                      onChange={(e) => setThankText(e.target.value)}
+                      disabled={noThank || isLoading}
+                      className="pr-12"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleVoiceInput('thank')}
+                      disabled={noThank || isLoading}
+                      className={`absolute right-2 p-2 rounded-lg transition-all ${
+                        isListening === 'thank'
+                          ? 'text-red-500 animate-pulse'
+                          : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                      } ${noThank || isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      title="Voice input"
+                    >
+                      <Mic className="w-5 h-5" />
+                    </button>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id="no-thank"
